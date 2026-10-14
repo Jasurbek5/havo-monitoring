@@ -1,0 +1,14 @@
+# Yengil rejim (Docker, PostgreSQL va Redis'siz): faqat Python kerak.
+# Ishga tushirish: pip install -r requirements-lite.txt
+aiogram>=3.13,<4.0
+fastapi>=0.115,<1.0
+uvicorn>=0.30,<1.0
+sqlalchemy[asyncio]>=2.0.30,<2.1
+aiosqlite>=0.20
+pydantic>=2.7,<3.0
+pydantic-settings>=2.3,<3.0
+httpx>=0.27,<1.0
+tzdata
+# Yengil rejimda ishlatilmaydi, lekin kod ularni import qiladi (kichik paketlar)
+redis>=5.0,<8.0
+celery>=5.4,<6.0
