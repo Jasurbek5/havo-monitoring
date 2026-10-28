@@ -40,31 +40,32 @@ async def build_air_text(
     district: District,
     lang: str,
 ) -> str:
-    """Umumiy xabar: havo sifati va ob-havo qisqacha."""
-    try:
-        reading = await get_current_reading(
-            session, redis, provider, district, ttl_minutes=settings.reading_ttl_minutes
-        )
-    except ProviderError:
+    """Umumiy xabar: havo sifati va ob-havoni parallel oladi (maksimal tezlik)."""
+    reading_coro = get_current_reading(
+        session, redis, provider, district, ttl_minutes=settings.reading_ttl_minutes
+    )
+    weather_coro = get_current_weather(
+        redis, district, settings.owm_api_key, ttl_minutes=settings.reading_ttl_minutes
+    )
+    reading_res, weather_res = await asyncio.gather(
+        reading_coro, weather_coro, return_exceptions=True
+    )
+
+    if isinstance(reading_res, Exception):
+        log.warning("Havo sifati olinmadi (%s): %r", district.slug, reading_res)
         return t(lang, "air_unavailable")
 
-    weather: CurrentWeather | None = None
-    try:
-        weather = await get_current_weather(
-            redis, district, settings.owm_api_key, ttl_minutes=settings.reading_ttl_minutes
-        )
-    except Exception as exc:
-        log.warning("Umumiy xabarda ob-havo olinmadi (%s): %r", district.slug, exc)
+    weather = weather_res if not isinstance(weather_res, Exception) else None
 
     return format_air_message(
         lang,
         district.name(lang),
-        aqi=reading.aqi,
-        pm2_5=reading.pm2_5,
-        pm10=reading.pm10,
-        recorded_at=reading.recorded_at,
+        aqi=reading_res.aqi,
+        pm2_5=reading_res.pm2_5,
+        pm10=reading_res.pm10,
+        recorded_at=reading_res.recorded_at,
         tz=settings.tz,
-        stale=reading.stale,
+        stale=reading_res.stale,
         weather=weather,
     )
 
@@ -93,9 +94,11 @@ async def build_weekly_weather_text(
     district: District,
     lang: str,
 ) -> str:
-    """7 kunlik ob-havo prognozi matni."""
+    """7 kunlik ob-havo prognozi matni (Open-Meteo va OWM zaxirasi bilan)."""
     try:
-        weekly = await get_weekly_weather(redis, district, ttl_minutes=120)
+        weekly = await get_weekly_weather(
+            redis, district, owm_api_key=settings.owm_api_key, ttl_minutes=120
+        )
     except (WeatherError, Exception) as exc:
         log.warning("Haftalik ob-havo olinmadi (%s): %r", district.slug, exc)
         return t(lang, "weather_unavailable")
@@ -166,10 +169,10 @@ async def refresh_air(
     settings: Settings,
     lang: str,
 ) -> None:
+    await call.answer()
     district_id = int((call.data or "").rsplit(":", 1)[1])
     district = await get_district(session, district_id)
     if district is None or not isinstance(call.message, Message):
-        await call.answer()
         return
 
     text = await build_air_text(session, redis, provider, settings, district, lang)
@@ -178,9 +181,6 @@ async def refresh_air(
     except TelegramBadRequest as exc:
         if "message is not modified" not in str(exc):
             raise
-        await call.answer(t(lang, "air_not_updated"))
-        return
-    await call.answer()
 
 
 @router.callback_query(F.data.startswith("weather:today:"))
@@ -192,10 +192,10 @@ async def view_today_weather(
     lang: str,
 ) -> None:
     """Bugungi to'liq ob-havoga o'tish yoki yangilash."""
+    await call.answer()
     district_id = int((call.data or "").rsplit(":", 1)[1])
     district = await get_district(session, district_id)
     if district is None or not isinstance(call.message, Message):
-        await call.answer()
         return
 
     text = await build_today_weather_text(redis, settings, district, lang)
@@ -204,9 +204,6 @@ async def view_today_weather(
     except TelegramBadRequest as exc:
         if "message is not modified" not in str(exc):
             raise
-        await call.answer(t(lang, "air_not_updated"))
-        return
-    await call.answer()
 
 
 @router.callback_query(F.data.startswith("weather:week:"))
@@ -218,10 +215,10 @@ async def view_weekly_weather(
     lang: str,
 ) -> None:
     """7 kunlik haftalik prognozga o'tish yoki yangilash."""
+    await call.answer()
     district_id = int((call.data or "").rsplit(":", 1)[1])
     district = await get_district(session, district_id)
     if district is None or not isinstance(call.message, Message):
-        await call.answer()
         return
 
     text = await build_weekly_weather_text(redis, settings, district, lang)
@@ -230,9 +227,6 @@ async def view_weekly_weather(
     except TelegramBadRequest as exc:
         if "message is not modified" not in str(exc):
             raise
-        await call.answer(t(lang, "air_not_updated"))
-        return
-    await call.answer()
 
 
 @router.callback_query(F.data == "air:other")

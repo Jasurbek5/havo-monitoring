@@ -1,13 +1,14 @@
-"""Ob-havo ma'lumotlarini olish va keshlash (Joriy va 7 kunlik prognoz).
+"""Ob-havo ma'lumotlarini olish va keshlash (Joriy va haftalik prognoz).
 
 Manbalar:
-1. Joriy ob-havo: OpenWeatherMap Current Weather API (zaxira: Open-Meteo).
-2. Haftalik ob-havo (7 kun): Open-Meteo Weather Forecast API (100% bepul, ochiq va kalitsiz).
+1. Joriy ob-havo: OpenWeatherMap (zaxira: Open-Meteo).
+2. Haftalik prognoz: Open-Meteo 7 kunlik (zaxira: OpenWeatherMap 5 kunlik).
 """
 
 import asyncio
+from collections import defaultdict
 from dataclasses import asdict, dataclass
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, date, datetime
 import json
 import logging
 from typing import Any
@@ -21,14 +22,29 @@ from app.models import District
 log = logging.getLogger(__name__)
 
 OWM_WEATHER_URL = "https://api.openweathermap.org/data/2.5/weather"
+OWM_FORECAST_URL = "https://api.openweathermap.org/data/2.5/forecast"
 OPEN_METEO_FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
+
+# Tezkor ishlash uchun Keep-Alive ulanishlar puli (har safar yangi client ochib-yopilmaydi)
+_shared_client: httpx.AsyncClient | None = None
+
+
+def get_weather_http_client() -> httpx.AsyncClient:
+    global _shared_client
+    if _shared_client is None or _shared_client.is_closed:
+        _shared_client = httpx.AsyncClient(
+            timeout=httpx.Timeout(connect=3.0, read=6.0, write=3.0, pool=5.0),
+            follow_redirects=True,
+            limits=httpx.Limits(max_keepalive_connections=20, max_connections=50),
+        )
+    return _shared_client
 
 
 class WeatherError(Exception):
     """Ob-havo ma'lumotini olib bo'lmadi."""
 
 
-# WMO ob-havo kodlari (Open-Meteo) va OWM holatlariga mos emojilar hamda kalitlar
+# WMO ob-havo kodlari va emojilar
 WMO_CODES: dict[int, tuple[str, str]] = {
     0: ("☀️", "weather_clear"),
     1: ("🌤", "weather_mostly_clear"),
@@ -58,34 +74,32 @@ WMO_CODES: dict[int, tuple[str, str]] = {
 
 
 def get_wmo_info(code: int) -> tuple[str, str]:
-    """WMO kodi bo'yicha emoji va tarjima kaliti."""
     return WMO_CODES.get(code, ("🌤", "weather_partly_cloudy"))
 
 
 def owm_id_to_wmo(weather_id: int) -> int:
-    """OpenWeatherMap holat ID sini WMO kodiga taxminan moslashtirish."""
     if 200 <= weather_id < 300:
-        return 95  # Thunderstorm
+        return 95
     if 300 <= weather_id < 400:
-        return 51  # Drizzle
+        return 51
     if 500 <= weather_id < 510:
-        return 61  # Rain
+        return 61
     if weather_id == 511:
-        return 66  # Freezing rain
+        return 66
     if 520 <= weather_id < 600:
-        return 80  # Showers
+        return 80
     if 600 <= weather_id < 700:
-        return 71  # Snow
+        return 71
     if 700 <= weather_id < 800:
-        return 45  # Atmosphere (fog/mist/dust)
+        return 45
     if weather_id == 800:
-        return 0  # Clear
+        return 0
     if weather_id == 801:
-        return 1  # Few clouds
+        return 1
     if weather_id == 802:
-        return 2  # Scattered clouds
+        return 2
     if weather_id in (803, 804):
-        return 3  # Overcast clouds
+        return 3
     return 1
 
 
@@ -108,7 +122,6 @@ class CurrentWeather:
 
     @property
     def pressure_mmhg(self) -> int:
-        """hPa dan mm simob ustuniga o'tkazish (1 hPa ≈ 0.750062 mmHg)."""
         return round(self.pressure_hpa * 0.750062)
 
     def to_json(self) -> str:
@@ -195,179 +208,213 @@ class WeeklyForecast:
 
 
 # ---------------------------------------------------------------------------
-# API orqali ma'lumot olish
+# API chaqiruvlari (Tezkor va xatolikka chidamli)
 # ---------------------------------------------------------------------------
 
 
 async def fetch_current_weather_owm(
     lat: float, lon: float, api_key: str, *, client: httpx.AsyncClient | None = None
 ) -> CurrentWeather:
-    """OpenWeatherMap orqali joriy ob-havoni olish."""
-    owns_client = client is None
-    c = client or httpx.AsyncClient(timeout=10.0)
-    try:
-        resp = await c.get(
-            OWM_WEATHER_URL,
-            params={"lat": lat, "lon": lon, "appid": api_key, "units": "metric"},
-        )
-        if resp.status_code != 200:
-            raise WeatherError(f"OWM weather xatosi: HTTP {resp.status_code}")
-        data = resp.json()
-        main = data["main"]
-        wind = data.get("wind", {})
-        weather_item = data.get("weather", [{}])[0]
-        weather_id = weather_item.get("id", 800)
-        description = weather_item.get("description", "")
-        sys_data = data.get("sys", {})
+    """OpenWeatherMap orqali joriy ob-havo."""
+    c = client or get_weather_http_client()
+    resp = await c.get(
+        OWM_WEATHER_URL,
+        params={"lat": lat, "lon": lon, "appid": api_key, "units": "metric"},
+    )
+    if resp.status_code != 200:
+        raise WeatherError(f"OWM weather xatosi: HTTP {resp.status_code}")
+    data = resp.json()
+    main = data["main"]
+    wind = data.get("wind", {})
+    weather_item = data.get("weather", [{}])[0]
+    weather_id = weather_item.get("id", 800)
+    description = weather_item.get("description", "")
+    sys_data = data.get("sys", {})
 
-        wmo = owm_id_to_wmo(weather_id)
-        emoji, _ = get_wmo_info(wmo)
+    wmo = owm_id_to_wmo(weather_id)
+    emoji, _ = get_wmo_info(wmo)
 
-        sunrise = (
-            datetime.fromtimestamp(sys_data["sunrise"], tz=UTC)
-            if "sunrise" in sys_data
-            else None
-        )
-        sunset = (
-            datetime.fromtimestamp(sys_data["sunset"], tz=UTC)
-            if "sunset" in sys_data
-            else None
-        )
+    sunrise = (
+        datetime.fromtimestamp(sys_data["sunrise"], tz=UTC)
+        if "sunrise" in sys_data
+        else None
+    )
+    sunset = (
+        datetime.fromtimestamp(sys_data["sunset"], tz=UTC)
+        if "sunset" in sys_data
+        else None
+    )
 
-        return CurrentWeather(
-            temp=round(float(main["temp"]), 1),
-            feels_like=round(float(main.get("feels_like", main["temp"])), 1),
-            temp_min=round(float(main.get("temp_min", main["temp"])), 1),
-            temp_max=round(float(main.get("temp_max", main["temp"])), 1),
-            humidity=int(main.get("humidity", 0)),
-            pressure_hpa=int(main.get("pressure", 1013)),
-            wind_speed=round(float(wind.get("speed", 0.0)), 1),
-            wind_deg=wind.get("deg"),
-            weather_code=wmo,
-            description=description,
-            emoji=emoji,
-            sunrise=sunrise,
-            sunset=sunset,
-            recorded_at=datetime.fromtimestamp(data.get("dt", int(datetime.now(UTC).timestamp())), tz=UTC),
-        )
-    finally:
-        if owns_client:
-            await c.aclose()
+    return CurrentWeather(
+        temp=round(float(main["temp"]), 1),
+        feels_like=round(float(main.get("feels_like", main["temp"])), 1),
+        temp_min=round(float(main.get("temp_min", main["temp"])), 1),
+        temp_max=round(float(main.get("temp_max", main["temp"])), 1),
+        humidity=int(main.get("humidity", 0)),
+        pressure_hpa=int(main.get("pressure", 1013)),
+        wind_speed=round(float(wind.get("speed", 0.0)), 1),
+        wind_deg=wind.get("deg"),
+        weather_code=wmo,
+        description=description,
+        emoji=emoji,
+        sunrise=sunrise,
+        sunset=sunset,
+        recorded_at=datetime.fromtimestamp(data.get("dt", int(datetime.now(UTC).timestamp())), tz=UTC),
+    )
 
 
 async def fetch_current_weather_open_meteo(
     lat: float, lon: float, *, client: httpx.AsyncClient | None = None
 ) -> CurrentWeather:
-    """Zaxira: Open-Meteo orqali joriy ob-havoni olish (API kalitsiz)."""
-    owns_client = client is None
-    c = client or httpx.AsyncClient(timeout=10.0)
-    try:
-        resp = await c.get(
-            OPEN_METEO_FORECAST_URL,
-            params={
-                "latitude": lat,
-                "longitude": lon,
-                "current": "temperature_2m,relative_humidity_2m,apparent_temperature,surface_pressure,wind_speed_10m,wind_direction_10m,weather_code",
-                "daily": "temperature_2m_max,temperature_2m_min,sunrise,sunset",
-                "timezone": "auto",
-            },
-        )
-        if resp.status_code != 200:
-            raise WeatherError(f"Open-Meteo current xatosi: HTTP {resp.status_code}")
-        data = resp.json()
-        current = data["current"]
-        daily = data.get("daily", {})
+    """Zaxira: Open-Meteo orqali joriy ob-havo."""
+    c = client or get_weather_http_client()
+    resp = await c.get(
+        OPEN_METEO_FORECAST_URL,
+        params={
+            "latitude": lat,
+            "longitude": lon,
+            "current": "temperature_2m,relative_humidity_2m,apparent_temperature,surface_pressure,wind_speed_10m,wind_direction_10m,weather_code",
+            "daily": "temperature_2m_max,temperature_2m_min,sunrise,sunset",
+            "timezone": "auto",
+        },
+    )
+    if resp.status_code != 200:
+        raise WeatherError(f"Open-Meteo current xatosi: HTTP {resp.status_code}")
+    data = resp.json()
+    current = data["current"]
+    daily = data.get("daily", {})
 
-        wmo = int(current.get("weather_code", 0))
-        emoji, _ = get_wmo_info(wmo)
+    wmo = int(current.get("weather_code", 0))
+    emoji, _ = get_wmo_info(wmo)
 
-        temp_max = daily.get("temperature_2m_max", [current["temperature_2m"]])[0]
-        temp_min = daily.get("temperature_2m_min", [current["temperature_2m"]])[0]
+    temp_max = daily.get("temperature_2m_max", [current["temperature_2m"]])[0]
+    temp_min = daily.get("temperature_2m_min", [current["temperature_2m"]])[0]
 
-        sunrise = None
-        sunset = None
-        if daily.get("sunrise"):
-            try:
-                sunrise = datetime.fromisoformat(daily["sunrise"][0]).replace(tzinfo=UTC)
-            except Exception:
-                pass
-        if daily.get("sunset"):
-            try:
-                sunset = datetime.fromisoformat(daily["sunset"][0]).replace(tzinfo=UTC)
-            except Exception:
-                pass
+    sunrise = None
+    sunset = None
+    if daily.get("sunrise"):
+        try:
+            sunrise = datetime.fromisoformat(daily["sunrise"][0]).replace(tzinfo=UTC)
+        except Exception:
+            pass
+    if daily.get("sunset"):
+        try:
+            sunset = datetime.fromisoformat(daily["sunset"][0]).replace(tzinfo=UTC)
+        except Exception:
+            pass
 
-        return CurrentWeather(
-            temp=round(float(current["temperature_2m"]), 1),
-            feels_like=round(float(current.get("apparent_temperature", current["temperature_2m"])), 1),
-            temp_min=round(float(temp_min), 1),
-            temp_max=round(float(temp_max), 1),
-            humidity=int(current.get("relative_humidity_2m", 0)),
-            pressure_hpa=round(float(current.get("surface_pressure", 1013))),
-            wind_speed=round(float(current.get("wind_speed_10m", 0.0)), 1),
-            wind_deg=int(current.get("wind_direction_10m", 0)),
-            weather_code=wmo,
-            description="",
-            emoji=emoji,
-            sunrise=sunrise,
-            sunset=sunset,
-            recorded_at=datetime.now(UTC),
-        )
-    finally:
-        if owns_client:
-            await c.aclose()
+    return CurrentWeather(
+        temp=round(float(current["temperature_2m"]), 1),
+        feels_like=round(float(current.get("apparent_temperature", current["temperature_2m"])), 1),
+        temp_min=round(float(temp_min), 1),
+        temp_max=round(float(temp_max), 1),
+        humidity=int(current.get("relative_humidity_2m", 0)),
+        pressure_hpa=round(float(current.get("surface_pressure", 1013))),
+        wind_speed=round(float(current.get("wind_speed_10m", 0.0)), 1),
+        wind_deg=int(current.get("wind_direction_10m", 0)),
+        weather_code=wmo,
+        description="",
+        emoji=emoji,
+        sunrise=sunrise,
+        sunset=sunset,
+        recorded_at=datetime.now(UTC),
+    )
 
 
-async def fetch_weekly_forecast(
+async def fetch_weekly_forecast_open_meteo(
     lat: float, lon: float, *, client: httpx.AsyncClient | None = None
 ) -> WeeklyForecast:
-    """Open-Meteo orqali 7 kunlik ob-havo prognozi (100% bepul)."""
-    owns_client = client is None
-    c = client or httpx.AsyncClient(timeout=10.0)
-    try:
-        resp = await c.get(
-            OPEN_METEO_FORECAST_URL,
-            params={
-                "latitude": lat,
-                "longitude": lon,
-                "daily": "weather_code,temperature_2m_max,temperature_2m_min,wind_speed_10m_max,precipitation_probability_max",
-                "timezone": "auto",
-            },
-        )
-        if resp.status_code != 200:
-            raise WeatherError(f"Open-Meteo weekly xatosi: HTTP {resp.status_code}")
-        data = resp.json()["daily"]
-        dates = data["time"]
-        codes = data["weather_code"]
-        max_temps = data["temperature_2m_max"]
-        min_temps = data["temperature_2m_min"]
-        winds = data.get("wind_speed_10m_max", [0.0] * len(dates))
-        precip_probs = data.get("precipitation_probability_max", [None] * len(dates))
+    """Open-Meteo orqali 7 kunlik ob-havo prognozi."""
+    c = client or get_weather_http_client()
+    resp = await c.get(
+        OPEN_METEO_FORECAST_URL,
+        params={
+            "latitude": lat,
+            "longitude": lon,
+            "daily": "weather_code,temperature_2m_max,temperature_2m_min,wind_speed_10m_max,precipitation_probability_max",
+            "timezone": "auto",
+        },
+    )
+    if resp.status_code != 200:
+        raise WeatherError(f"Open-Meteo weekly xatosi: HTTP {resp.status_code}")
+    data = resp.json()["daily"]
+    dates = data["time"]
+    codes = data["weather_code"]
+    max_temps = data["temperature_2m_max"]
+    min_temps = data["temperature_2m_min"]
+    winds = data.get("wind_speed_10m_max", [0.0] * len(dates))
+    precip_probs = data.get("precipitation_probability_max", [None] * len(dates))
 
-        days: list[DailyForecast] = []
-        for i in range(min(7, len(dates))):
-            wmo = int(codes[i])
-            emoji, key = get_wmo_info(wmo)
-            days.append(
-                DailyForecast(
-                    date_str=dates[i],
-                    weather_code=wmo,
-                    emoji=emoji,
-                    condition_key=key,
-                    temp_max=round(float(max_temps[i]), 1),
-                    temp_min=round(float(min_temps[i]), 1),
-                    wind_speed_max=round(float(winds[i]), 1),
-                    precipitation_prob=int(precip_probs[i]) if precip_probs[i] is not None else None,
-                )
+    days: list[DailyForecast] = []
+    for i in range(min(7, len(dates))):
+        wmo = int(codes[i])
+        emoji, key = get_wmo_info(wmo)
+        days.append(
+            DailyForecast(
+                date_str=dates[i],
+                weather_code=wmo,
+                emoji=emoji,
+                condition_key=key,
+                temp_max=round(float(max_temps[i]), 1),
+                temp_min=round(float(min_temps[i]), 1),
+                wind_speed_max=round(float(winds[i]), 1),
+                precipitation_prob=int(precip_probs[i]) if precip_probs[i] is not None else None,
             )
-        return WeeklyForecast(days=days, fetched_at=datetime.now(UTC))
-    finally:
-        if owns_client:
-            await c.aclose()
+        )
+    return WeeklyForecast(days=days, fetched_at=datetime.now(UTC))
+
+
+async def fetch_weekly_forecast_owm(
+    lat: float, lon: float, api_key: str, *, client: httpx.AsyncClient | None = None
+) -> WeeklyForecast:
+    """Zaxira: OpenWeatherMap 5 kunlik prognozi (har 3 soatlik o'lchovlarni kunlarga birlashtiradi)."""
+    c = client or get_weather_http_client()
+    resp = await c.get(
+        OWM_FORECAST_URL,
+        params={"lat": lat, "lon": lon, "appid": api_key, "units": "metric"},
+    )
+    if resp.status_code != 200:
+        raise WeatherError(f"OWM forecast xatosi: HTTP {resp.status_code}")
+    items = resp.json().get("list", [])
+    if not items:
+        raise WeatherError("OWM ro'yxati bo'sh")
+
+    by_day: dict[str, list[dict]] = defaultdict(list)
+    for it in items:
+        day_str = it["dt_txt"].split(" ")[0]
+        by_day[day_str].append(it)
+
+    days: list[DailyForecast] = []
+    for day_str, points in by_day.items():
+        temps = [p["main"]["temp"] for p in points]
+        winds = [p.get("wind", {}).get("speed", 0.0) for p in points]
+        pops = [int(p.get("pop", 0) * 100) for p in points]
+        # Kunduzgi ob-havoni asosiy qilib olamiz (soat 12:00 yoki o'rtadagi nuqta)
+        mid_point = points[len(points) // 2]
+        weather_id = mid_point.get("weather", [{}])[0].get("id", 800)
+        wmo = owm_id_to_wmo(weather_id)
+        emoji, key = get_wmo_info(wmo)
+
+        days.append(
+            DailyForecast(
+                date_str=day_str,
+                weather_code=wmo,
+                emoji=emoji,
+                condition_key=key,
+                temp_max=round(float(max(temps)), 1),
+                temp_min=round(float(min(temps)), 1),
+                wind_speed_max=round(float(max(winds)), 1),
+                precipitation_prob=max(pops) if any(pops) else None,
+            )
+        )
+        if len(days) >= 7:
+            break
+
+    return WeeklyForecast(days=days, fetched_at=datetime.now(UTC))
 
 
 # ---------------------------------------------------------------------------
-# Keshlash va foydalanuvchiga taqdim etish
+# Keshlash va servis metodlari
 # ---------------------------------------------------------------------------
 
 
@@ -396,19 +443,19 @@ async def get_current_weather(
         except (RedisError, ValueError, KeyError) as exc:
             log.warning("Ob-havo keshi o'qishda xato: %r", exc)
 
-    # 2. Provayderdan olish (OWM yoki Open-Meteo)
+    # 2. Provayderdan olish
     weather: CurrentWeather | None = None
     if owm_api_key:
         try:
             weather = await fetch_current_weather_owm(district.lat, district.lon, owm_api_key)
         except Exception as exc:
-            log.warning("OWM orqali ob-havo olinmadi (%s): %r. Open-Meteo sinab ko'riladi.", district.slug, exc)
+            log.warning("OWM ob-havo olinmadi: %r. Open-Meteo sinab ko'riladi.", exc)
 
     if weather is None:
         try:
             weather = await fetch_current_weather_open_meteo(district.lat, district.lon)
         except Exception as exc:
-            log.error("Open-Meteo orqali ham ob-havo olinmadi (%s): %r", district.slug, exc)
+            log.error("Open-Meteo orqali ham ob-havo olinmadi: %r", exc)
             raise WeatherError("Ob-havo ma'lumotini olish imkoni bo'lmadi") from exc
 
     # 3. Keshga yozish
@@ -424,10 +471,12 @@ async def get_current_weather(
 async def get_weekly_weather(
     redis: Redis | None,
     district: District,
+    owm_api_key: str = "",
     *,
     ttl_minutes: int = 120,
 ) -> WeeklyForecast:
-    """Hudud uchun 7 kunlik prognozni olish (kesh -> Open-Meteo)."""
+    """Hudud uchun haftalik prognoz (kesh -> Open-Meteo -> OWM 5 kunlik zaxira)."""
+    # 1. Keshdan tekshirish
     if redis is not None:
         try:
             cached = await redis.get(_weekly_cache_key(district.id))
@@ -436,12 +485,24 @@ async def get_weekly_weather(
         except (RedisError, ValueError, KeyError) as exc:
             log.warning("Haftalik ob-havo keshini o'qishda xato: %r", exc)
 
+    # 2. Open-Meteo orqali olishga urinish
+    weekly: WeeklyForecast | None = None
     try:
-        weekly = await fetch_weekly_forecast(district.lat, district.lon)
+        weekly = await fetch_weekly_forecast_open_meteo(district.lat, district.lon)
     except Exception as exc:
-        log.error("Haftalik ob-havo olinmadi (%s): %r", district.slug, exc)
-        raise WeatherError("Haftalik ob-havo ma'lumotini olish imkoni bo'lmadi") from exc
+        log.warning("Open-Meteo haftalik prognoz bermadi: %r. OWM sinab ko'riladi.", exc)
 
+    # 3. Agar Open-Meteo ishlamasa, OWM 5 kunlik prognoziga zaxira
+    if weekly is None and owm_api_key:
+        try:
+            weekly = await fetch_weekly_forecast_owm(district.lat, district.lon, owm_api_key)
+        except Exception as exc:
+            log.error("OWM orqali ham haftalik prognoz olinmadi: %r", exc)
+
+    if weekly is None:
+        raise WeatherError("Haftalik ob-havo ma'lumotini olish imkoni bo'lmadi")
+
+    # 4. Keshga yozish
     if redis is not None and weekly is not None:
         try:
             await redis.set(_weekly_cache_key(district.id), weekly.to_json(), ex=ttl_minutes * 60)

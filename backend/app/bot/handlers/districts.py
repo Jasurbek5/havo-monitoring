@@ -114,16 +114,15 @@ async def pick_search_result(
     lang: str,
 ) -> None:
     """Qidiruv natijalaridan birini tanlash."""
+    await call.answer()
     parts = (call.data or "").split(":")
     if len(parts) != 3 or not isinstance(call.message, Message):
-        await call.answer()
         return
 
     idx = int(parts[2])
     data = await state.get_data()
     results = data.get("search_results", [])
     if not results or idx >= len(results):
-        await call.answer()
         return
 
     item = results[idx]
@@ -146,16 +145,15 @@ async def pick_search_result(
         t(lang, "district_set", name=district.name(lang)),
         reply_markup=main_menu_kb(lang),
     )
-    await call.answer()
 
 
 @router.callback_query(F.data == "loc:cancel")
 async def cancel_search(call: CallbackQuery, state: FSMContext, lang: str) -> None:
+    await call.answer()
     await state.clear()
     if isinstance(call.message, Message):
         await call.message.edit_reply_markup(reply_markup=None)
         await call.message.answer(t(lang, "cancelled"), reply_markup=main_menu_kb(lang))
-    await call.answer()
 
 
 @router.message(F.location, StateFilter(None))
@@ -179,9 +177,9 @@ async def on_location(
 @router.callback_query(F.data.startswith("dist:list:"))
 async def switch_list(call: CallbackQuery, session: AsyncSession, lang: str) -> None:
     """Toshkent tumanlari <-> viloyatlar ro'yxati almashinuvi."""
+    await call.answer()
     parts = (call.data or "").split(":")
     if len(parts) != 4 or not isinstance(call.message, Message):
-        await call.answer()
         return
     _, _, mode, group = parts
     kind = DistrictKind.CITY_DISTRICT if group == "city" else DistrictKind.REGION
@@ -189,17 +187,16 @@ async def switch_list(call: CallbackQuery, session: AsyncSession, lang: str) -> 
     await call.message.edit_reply_markup(
         reply_markup=districts_kb(districts, lang, mode=mode, group=group)
     )
-    await call.answer()
 
 
 @router.callback_query(F.data.startswith("dist:set:"))
 async def set_district(
     call: CallbackQuery, session: AsyncSession, user: User, lang: str
 ) -> None:
+    await call.answer()
     district_id = int((call.data or "").rsplit(":", 1)[1])
     district = await get_district(session, district_id)
     if district is None or not isinstance(call.message, Message):
-        await call.answer()
         return
 
     user.district_id = district.id
@@ -207,4 +204,3 @@ async def set_district(
     await call.message.answer(
         t(lang, "district_set", name=district.name(lang)), reply_markup=main_menu_kb(lang)
     )
-    await call.answer()

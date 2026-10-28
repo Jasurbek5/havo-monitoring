@@ -151,6 +151,11 @@ def format_full_weather_message(
     )
 
 
+def _fmt_deg(val: float) -> str:
+    r = int(round(val))
+    return f"+{r}" if r > 0 else str(r)
+
+
 def format_weekly_forecast_message(
     lang: str,
     district_name: str,
@@ -186,9 +191,9 @@ def format_weekly_forecast_message(
             date=formatted_date,
             emoji=item.emoji,
             condition=cond,
-            temp_max=f"{item.temp_max:+0.0f}",
-            temp_min=f"{item.temp_min:+0.0f}",
-            wind=item.wind_speed_max,
+            temp_max=_fmt_deg(item.temp_max),
+            temp_min=_fmt_deg(item.temp_min),
+            wind=f"{item.wind_speed_max:.1f}",
             precip=precip,
         )
 
