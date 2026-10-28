@@ -165,6 +165,17 @@ def test_app_starts_in_lite_mode_with_only_sqlite(tmp_path, monkeypatch, provide
             assert ready.status_code == 200
             assert ready.json() == {"database": "ok", "cache": "ok"}
             assert client.get("/health").json() == {"status": "ok"}
+            # Admin panel himoyalangan: parolsiz 401 qaytaradi
+            assert client.get("/admin").status_code == 401
+            assert client.get("/admin", auth=("wrong", "badpass")).status_code == 401
+
+            # To'g'ri login/parol bilan kirish:
+            admin_resp = client.get("/admin", auth=("admin", "admin123"))
+            assert admin_resp.status_code == 200
+            assert "Havo Monitoringi" in admin_resp.text
+            api_resp = client.get("/admin/api/users", auth=("admin", "admin123"))
+            assert api_resp.status_code == 200
+            assert "total" in api_resp.json()
     finally:
         get_settings.cache_clear()
         asyncio.run(dispose_engine())

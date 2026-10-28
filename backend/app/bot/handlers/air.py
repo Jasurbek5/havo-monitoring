@@ -18,6 +18,7 @@ from app.core.messages import (
     format_air_message,
     format_full_weather_message,
     format_weekly_forecast_message,
+    resolve_effective_tz,
 )
 from app.models import District, User
 from app.services.air_quality import AirQualityProvider, ProviderError, get_current_reading
@@ -41,6 +42,7 @@ async def build_air_text(
     settings: Settings,
     district: District,
     lang: str,
+    user: User | None = None,
 ) -> str:
     """Umumiy xabar: havo sifati va ob-havoni parallel oladi (maksimal tezlik)."""
     reading_coro = get_current_reading(
@@ -58,6 +60,11 @@ async def build_air_text(
         return t(lang, "air_unavailable")
 
     weather = weather_res if not isinstance(weather_res, Exception) else None
+    tz, tz_label = resolve_effective_tz(
+        getattr(user, "timezone", "auto") if user else None,
+        weather,
+        settings.tz,
+    )
 
     return format_air_message(
         lang,
@@ -66,7 +73,8 @@ async def build_air_text(
         pm2_5=reading_res.pm2_5,
         pm10=reading_res.pm10,
         recorded_at=reading_res.recorded_at,
-        tz=settings.tz,
+        tz=tz,
+        tz_label=tz_label,
         stale=reading_res.stale,
         weather=weather,
     )
@@ -77,6 +85,7 @@ async def build_today_weather_text(
     settings: Settings,
     district: District,
     lang: str,
+    user: User | None = None,
 ) -> str:
     """Bugungi to'liq ob-havo matni."""
     try:
@@ -87,7 +96,19 @@ async def build_today_weather_text(
         log.warning("Bugungi ob-havo olinmadi (%s): %r", district.slug, exc)
         return t(lang, "weather_unavailable")
 
-    return format_full_weather_message(lang, district.name(lang), weather, tz=settings.tz)
+    tz, tz_label = resolve_effective_tz(
+        getattr(user, "timezone", "auto") if user else None,
+        weather,
+        settings.tz,
+    )
+
+    return format_full_weather_message(
+        lang,
+        district.name(lang),
+        weather,
+        tz=tz,
+        tz_label=tz_label,
+    )
 
 
 async def build_weekly_weather_text(
@@ -155,7 +176,7 @@ async def show_air(
         await message.answer(t(lang, "need_district"), reply_markup=district_prompt_kb(lang))
         return
     switch_district, is_home = get_switch_context(user, district.id)
-    text = await build_air_text(session, redis, provider, settings, district, lang)
+    text = await build_air_text(session, redis, provider, settings, district, lang, user=user)
     await message.answer(
         text,
         reply_markup=air_kb(
@@ -181,7 +202,7 @@ async def show_today_weather(
         await message.answer(t(lang, "need_district"), reply_markup=district_prompt_kb(lang))
         return
     switch_district, is_home = get_switch_context(user, district.id)
-    text = await build_today_weather_text(redis, settings, district, lang)
+    text = await build_today_weather_text(redis, settings, district, lang, user=user)
     await message.answer(
         text,
         reply_markup=today_weather_kb(
@@ -212,7 +233,7 @@ async def refresh_air(
         return
 
     switch_district, is_home = get_switch_context(user, district.id)
-    text = await build_air_text(session, redis, provider, settings, district, lang)
+    text = await build_air_text(session, redis, provider, settings, district, lang, user=user)
     try:
         await call.message.edit_text(
             text,
@@ -243,7 +264,7 @@ async def switch_air_district(
         return
 
     switch_district, is_home = get_switch_context(user, district.id)
-    text = await build_air_text(session, redis, provider, settings, district, lang)
+    text = await build_air_text(session, redis, provider, settings, district, lang, user=user)
     try:
         await call.message.edit_text(
             text,
@@ -273,7 +294,7 @@ async def view_today_weather(
         return
 
     switch_district, is_home = get_switch_context(user, district.id)
-    text = await build_today_weather_text(redis, settings, district, lang)
+    text = await build_today_weather_text(redis, settings, district, lang, user=user)
     try:
         await call.message.edit_text(
             text,
@@ -343,7 +364,7 @@ async def view_district(
         return
 
     switch_district, is_home = get_switch_context(user, district.id)
-    text = await build_air_text(session, redis, provider, settings, district, lang)
+    text = await build_air_text(session, redis, provider, settings, district, lang, user=user)
     await call.message.edit_text(
         text,
         reply_markup=air_kb(

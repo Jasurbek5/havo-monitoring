@@ -44,6 +44,10 @@ class Settings(BaseSettings):
     max_district_distance_km: float = 100.0
     media_dir: str = "./media"
 
+    # Admin panel
+    admin_username: str = "admin"
+    admin_password: str = "admin123"
+
     log_level: str = "INFO"
 
     @property

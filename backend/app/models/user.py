@@ -33,6 +33,10 @@ class User(CreatedAtMixin, Base):
     digest_time: Mapped[str] = mapped_column(
         String(5), default="07:00", server_default="07:00"
     )
+    # Vaqt mintaqasi ("auto" - hudud bo'yicha avtomatik, yoki "Asia/Tashkent", "Asia/Tokyo", va h.k.)
+    timezone: Mapped[str] = mapped_column(
+        String(32), default="auto", server_default="auto"
+    )
     # Bot bloklangan bo'lsa False; foydalanuvchi qaytib yozsa yana True bo'ladi.
     is_active: Mapped[bool] = mapped_column(default=True, server_default=sa_true())
 

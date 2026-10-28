@@ -196,21 +196,54 @@ def weekly_weather_kb(
     return _inline(rows)
 
 
+TIMEZONE_OPTIONS = [
+    ("auto", "tz_auto"),
+    ("Asia/Tashkent", "tz_tashkent"),
+    ("Europe/Moscow", "tz_moscow"),
+    ("Asia/Tokyo", "tz_tokyo"),
+    ("Asia/Dubai", "tz_dubai"),
+    ("Asia/Almaty", "tz_almaty"),
+    ("Europe/Istanbul", "tz_istanbul"),
+    ("Europe/London", "tz_london"),
+    ("America/New_York", "tz_new_york"),
+    ("UTC", "tz_utc"),
+]
+
+
+def timezone_display_name(tz_val: str, lang: str) -> str:
+    for code, key in TIMEZONE_OPTIONS:
+        if code == tz_val:
+            return t(lang, key)
+    return tz_val or t(lang, "tz_auto")
+
+
 def settings_kb(user: User, lang: str) -> InlineKeyboardMarkup:
     def state(flag: bool) -> str:
         return t(lang, "state_on" if flag else "state_off")
 
     home_name = user.home_district.name(lang) if user.home_district else "—"
     digest_time = user.digest_time or "07:00"
+    user_tz = getattr(user, "timezone", "auto")
+    tz_label = timezone_display_name(user_tz, lang)
 
     return _inline(
         [
             [_btn(t(lang, "toggle_alert", state=state(user.alert_enabled)), "set:alert")],
             [_btn(t(lang, "toggle_digest", state=state(user.daily_digest)), "set:digest")],
             [_btn(t(lang, "toggle_time", time=digest_time), "set:time")],
+            [_btn(t(lang, "toggle_timezone", tz=tz_label), "set:tz")],
             [_btn(t(lang, "toggle_home", name=home_name), "set:home")],
         ]
     )
+
+
+def timezone_kb(current_tz: str, lang: str) -> InlineKeyboardMarkup:
+    buttons = []
+    for code, key in TIMEZONE_OPTIONS:
+        mark = "✓ " if code == current_tz else ""
+        buttons.append([_btn(f"{mark}{t(lang, key)}", f"tz:pick:{code}")])
+    buttons.append([_btn(t(lang, "btn_back"), "set:back")])
+    return _inline(buttons)
 
 
 def digest_time_kb(current_time: str, lang: str) -> InlineKeyboardMarkup:

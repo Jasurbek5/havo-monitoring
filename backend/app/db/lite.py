@@ -29,5 +29,9 @@ async def init_lite_db(engine: AsyncEngine, factory: async_sessionmaker[AsyncSes
             await conn.execute(
                 text("ALTER TABLE users ADD COLUMN digest_time VARCHAR(5) DEFAULT '07:00'")
             )
+        if user_cols and "timezone" not in user_cols:
+            await conn.execute(
+                text("ALTER TABLE users ADD COLUMN timezone VARCHAR(32) DEFAULT 'auto'")
+            )
     async with factory() as session:
         await seed_districts(session)

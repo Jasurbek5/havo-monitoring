@@ -229,3 +229,40 @@ def test_location_result_display_name():
     )
     assert "Kazakhstan" in foreign_loc.display_name("en")
     assert "Almati" in foreign_loc.display_name("uz")
+
+
+def test_tokyo_weather_timezone():
+    from app.core.messages import resolve_effective_tz
+
+    # Tokio ob-havosi: UTC 20:59 da quyosh chiqishi, UTC 07:49 da botishi, offset = 32400 (UTC+9)
+    tokyo_weather = CurrentWeather(
+        temp=18.0,
+        feels_like=17.5,
+        temp_min=12.0,
+        temp_max=20.0,
+        humidity=60,
+        pressure_hpa=1013,
+        wind_speed=2.5,
+        wind_deg=90,
+        weather_code=0,
+        description="Clear sky",
+        emoji="☀️",
+        sunrise=datetime(2026, 10, 28, 20, 59, tzinfo=UTC),
+        sunset=datetime(2026, 10, 28, 7, 49, tzinfo=UTC),
+        recorded_at=NOW,
+        timezone_offset=32400,
+    )
+    # Avtomatik rejim: Tokioning o'z mahalliy vaqti (UTC+9) ishlatiladi
+    tz, tz_label = resolve_effective_tz("auto", tokyo_weather, TZ)
+    assert tz_label == "UTC+9"
+    msg = format_full_weather_message("uz", "Tokio", tokyo_weather, tz=tz, tz_label=tz_label)
+    assert "05:59" in msg  # Tokioda quyosh mahalliy vaqt bilan 05:59 da chiqadi
+    assert "16:49" in msg  # Tokioda quyosh mahalliy vaqt bilan 16:49 da botadi
+    assert "UTC+9" in msg
+
+    # Agar foydalanuvchi qat'iy Toshkent vaqtini tanlagan bo'lsa
+    tz_tashkent, label_tashkent = resolve_effective_tz("Asia/Tashkent", tokyo_weather, TZ)
+    assert "Asia/Tashkent" in label_tashkent
+    msg_tashkent = format_full_weather_message("uz", "Tokio", tokyo_weather, tz=tz_tashkent, tz_label=label_tashkent)
+    assert "01:59" in msg_tashkent  # Toshkent vaqti bilan 01:59
+    assert "12:49" in msg_tashkent

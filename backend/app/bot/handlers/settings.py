@@ -12,6 +12,8 @@ from app.bot.keyboards import (
     home_settings_kb,
     language_kb,
     settings_kb,
+    timezone_display_name,
+    timezone_kb,
 )
 from app.core.i18n import all_translations, t
 from app.models import User
@@ -66,6 +68,32 @@ async def pick_digest_time(call: CallbackQuery, user: User, lang: str) -> None:
     new_time = (call.data or "").rsplit(":", 1)[1]
     user.digest_time = new_time
     await call.answer(t(lang, "digest_time_set", time=new_time))
+    if isinstance(call.message, Message):
+        await call.message.edit_text(
+            t(lang, "settings_title"),
+            reply_markup=settings_kb(user, lang),
+        )
+
+
+@router.callback_query(F.data == "set:tz")
+async def choose_timezone_menu(call: CallbackQuery, user: User, lang: str) -> None:
+    """Vaqt mintaqasini tanlash menyusi."""
+    await call.answer()
+    if isinstance(call.message, Message):
+        current_tz = getattr(user, "timezone", "auto")
+        await call.message.edit_text(
+            t(lang, "choose_timezone"),
+            reply_markup=timezone_kb(current_tz, lang),
+        )
+
+
+@router.callback_query(F.data.startswith("tz:pick:"))
+async def pick_timezone(call: CallbackQuery, user: User, lang: str) -> None:
+    """Yangi vaqt mintaqasini saqlash."""
+    new_tz = (call.data or "").split(":", 2)[2]
+    user.timezone = new_tz
+    tz_label = timezone_display_name(new_tz, lang)
+    await call.answer(t(lang, "timezone_set", tz=tz_label))
     if isinstance(call.message, Message):
         await call.message.edit_text(
             t(lang, "settings_title"),

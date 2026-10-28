@@ -1,11 +1,34 @@
 """Foydalanuvchiga boradigan xabar matnlarini yig'ish (bot ham, Celery ham shuni ishlatadi)."""
 
-from datetime import date, datetime
+from datetime import date, datetime, tzinfo
 from zoneinfo import ZoneInfo
 
 from app.core.aqi import LEVEL_EMOJI, AQILevel, level_for
 from app.core.i18n import t
 from app.services.weather import CurrentWeather, WeeklyForecast, get_wmo_info
+
+
+def resolve_effective_tz(
+    user_tz: str | None,
+    weather: CurrentWeather | None,
+    default_tz: ZoneInfo,
+) -> tuple[tzinfo, str]:
+    """Qaytaradi: (tz, tz_label).
+
+    1. Agar user_tz mavjud bo'lsa va 'auto' bo'lmasa -> ZoneInfo(user_tz).
+    2. Aks holda, agar weather ob'ektida timezone_offset bo'lsa -> weather.tz (masalan Tokio UTC+9).
+    3. Aks holda -> default_tz (masalan Asia/Tashkent UTC+5).
+    """
+    if user_tz and user_tz != "auto":
+        try:
+            return ZoneInfo(user_tz), user_tz
+        except Exception:
+            pass
+
+    if weather is not None and hasattr(weather, "tz"):
+        return weather.tz, weather.tz_name
+
+    return default_tz, "UTC+5"
 
 
 def _value(number: float | None) -> str:
@@ -67,12 +90,16 @@ def format_air_message(
     pm2_5: float | None,
     pm10: float | None,
     recorded_at: datetime,
-    tz: ZoneInfo,
+    tz: tzinfo | ZoneInfo,
+    tz_label: str = "",
     stale: bool = False,
     weather: CurrentWeather | None = None,
 ) -> str:
     """Umumiy xabar: havo sifati va (mavjud bo'lsa) ob-havo qisqacha."""
     level = level_for(aqi)
+    time_str = recorded_at.astimezone(tz).strftime("%H:%M")
+    if tz_label:
+        time_str = f"{time_str} ({tz_label})"
     if weather is not None:
         weather_desc = weather_condition_label(lang, weather.weather_code)
         text = t(
@@ -91,7 +118,7 @@ def format_air_message(
             pm25=_value(pm2_5),
             pm10=_value(pm10),
             advice=advice_for(lang, level),
-            time=recorded_at.astimezone(tz).strftime("%H:%M"),
+            time=time_str,
         )
     else:
         text = t(
@@ -103,7 +130,7 @@ def format_air_message(
             aqi=aqi,
             pm25=_value(pm2_5),
             pm10=_value(pm10),
-            time=recorded_at.astimezone(tz).strftime("%H:%M"),
+            time=time_str,
             advice=advice_for(lang, level),
         )
     if stale:
@@ -116,19 +143,26 @@ def format_full_weather_message(
     district_name: str,
     weather: CurrentWeather,
     *,
-    tz: ZoneInfo,
+    tz: tzinfo | ZoneInfo,
+    tz_label: str = "",
 ) -> str:
     """Bugungi to'liq ob-havo ma'lumoti."""
     weather_desc = weather_condition_label(lang, weather.weather_code)
     wind_dir = wind_direction_label(lang, weather.wind_deg)
     sun_times = ""
     if weather.sunrise and weather.sunset:
+        tz_suffix = f" ({tz_label})" if tz_label else ""
         sun_times = t(
             lang,
             "sun_times_format",
             sunrise=weather.sunrise.astimezone(tz).strftime("%H:%M"),
             sunset=weather.sunset.astimezone(tz).strftime("%H:%M"),
+            tz=tz_suffix,
         )
+
+    time_str = weather.recorded_at.astimezone(tz).strftime("%H:%M")
+    if tz_label:
+        time_str = f"{time_str} ({tz_label})"
 
     return t(
         lang,
@@ -147,7 +181,7 @@ def format_full_weather_message(
         pressure_hpa=weather.pressure_hpa,
         sun_times=sun_times,
         weather_tip=smart_weather_tip(lang, weather),
-        time=weather.recorded_at.astimezone(tz).strftime("%H:%M"),
+        time=time_str,
     )
 
 

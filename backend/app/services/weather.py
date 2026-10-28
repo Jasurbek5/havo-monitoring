@@ -8,7 +8,7 @@ Manbalar:
 import asyncio
 from collections import defaultdict
 from dataclasses import asdict, dataclass
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta, timezone
 import json
 import logging
 from typing import Any
@@ -119,6 +119,19 @@ class CurrentWeather:
     sunrise: datetime | None
     sunset: datetime | None
     recorded_at: datetime
+    timezone_offset: int = 18000  # Shift in seconds from UTC (18000 = UTC+5 Tashkent)
+
+    @property
+    def tz(self) -> timezone:
+        return timezone(timedelta(seconds=self.timezone_offset))
+
+    @property
+    def tz_name(self) -> str:
+        hours = self.timezone_offset // 3600
+        mins = abs(self.timezone_offset % 3600) // 60
+        if mins:
+            return f"UTC{hours:+d}:{mins:02d}"
+        return f"UTC{hours:+d}"
 
     @property
     def pressure_mmhg(self) -> int:
@@ -140,6 +153,7 @@ class CurrentWeather:
             "sunrise": self.sunrise.isoformat() if self.sunrise else None,
             "sunset": self.sunset.isoformat() if self.sunset else None,
             "recorded_at": self.recorded_at.isoformat(),
+            "timezone_offset": self.timezone_offset,
         }
         return json.dumps(data)
 
@@ -166,6 +180,7 @@ class CurrentWeather:
             sunrise=sunrise,
             sunset=sunset,
             recorded_at=recorded_at,
+            timezone_offset=int(d.get("timezone_offset", 18000)),
         )
 
 
@@ -233,6 +248,7 @@ async def fetch_current_weather_owm(
 
     wmo = owm_id_to_wmo(weather_id)
     emoji, _ = get_wmo_info(wmo)
+    timezone_offset = int(data.get("timezone", 18000))
 
     sunrise = (
         datetime.fromtimestamp(sys_data["sunrise"], tz=UTC)
@@ -260,6 +276,7 @@ async def fetch_current_weather_owm(
         sunrise=sunrise,
         sunset=sunset,
         recorded_at=datetime.fromtimestamp(data.get("dt", int(datetime.now(UTC).timestamp())), tz=UTC),
+        timezone_offset=timezone_offset,
     )
 
 
@@ -283,6 +300,8 @@ async def fetch_current_weather_open_meteo(
     data = resp.json()
     current = data["current"]
     daily = data.get("daily", {})
+    timezone_offset = int(data.get("utc_offset_seconds", 18000))
+    tz_local = timezone(timedelta(seconds=timezone_offset))
 
     wmo = int(current.get("weather_code", 0))
     emoji, _ = get_wmo_info(wmo)
@@ -294,12 +313,18 @@ async def fetch_current_weather_open_meteo(
     sunset = None
     if daily.get("sunrise"):
         try:
-            sunrise = datetime.fromisoformat(daily["sunrise"][0]).replace(tzinfo=UTC)
+            dt = datetime.fromisoformat(daily["sunrise"][0])
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=tz_local)
+            sunrise = dt.astimezone(UTC)
         except Exception:
             pass
     if daily.get("sunset"):
         try:
-            sunset = datetime.fromisoformat(daily["sunset"][0]).replace(tzinfo=UTC)
+            dt = datetime.fromisoformat(daily["sunset"][0])
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=tz_local)
+            sunset = dt.astimezone(UTC)
         except Exception:
             pass
 
@@ -318,6 +343,7 @@ async def fetch_current_weather_open_meteo(
         sunrise=sunrise,
         sunset=sunset,
         recorded_at=datetime.now(UTC),
+        timezone_offset=timezone_offset,
     )
 
 

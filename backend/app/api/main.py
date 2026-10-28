@@ -20,6 +20,7 @@ from fastapi.responses import JSONResponse
 from redis.asyncio import Redis
 from sqlalchemy import text
 
+from app.api.admin import admin_router
 from app.bot.factory import create_bot, create_dispatcher
 from app.config import get_settings
 from app.core.memory_cache import get_memory_cache
@@ -111,13 +112,14 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Havo monitoringi API", version="0.1.0", lifespan=lifespan)
+app.include_router(admin_router)
 
 
 @app.get("/")
 @app.head("/")
 async def root() -> dict[str, str]:
     """Asosiy sahifa (Render ping va browser tekshiruvi uchun)."""
-    return {"status": "ok", "service": "havo-monitoring"}
+    return {"status": "ok", "service": "havo-monitoring", "admin_panel": "/admin"}
 
 
 @app.get("/health")
