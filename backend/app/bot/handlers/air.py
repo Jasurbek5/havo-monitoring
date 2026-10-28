@@ -1,5 +1,6 @@
 """Havo sifati va ob-havo: joriy holat, to'liq ob-havo, haftalik prognoz va yangilash."""
 
+import asyncio
 import logging
 from aiogram import F, Router
 from aiogram.exceptions import TelegramBadRequest
