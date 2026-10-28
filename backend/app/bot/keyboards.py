@@ -34,9 +34,9 @@ def _btn(text: str, data: str) -> InlineKeyboardButton:
 def main_menu_kb(lang: str) -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text=t(lang, "btn_air")), KeyboardButton(text=t(lang, "btn_complaint"))],
-            [KeyboardButton(text=t(lang, "btn_alerts")), KeyboardButton(text=t(lang, "btn_district"))],
-            [KeyboardButton(text=t(lang, "btn_language"))],
+            [KeyboardButton(text=t(lang, "btn_air")), KeyboardButton(text=t(lang, "btn_weather"))],
+            [KeyboardButton(text=t(lang, "btn_complaint")), KeyboardButton(text=t(lang, "btn_district"))],
+            [KeyboardButton(text=t(lang, "btn_alerts")), KeyboardButton(text=t(lang, "btn_language"))],
         ],
         resize_keyboard=True,
     )
@@ -46,11 +46,24 @@ def district_prompt_kb(lang: str) -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text=t(lang, "btn_send_location"), request_location=True)],
-            [KeyboardButton(text=t(lang, "btn_choose_list"))],
+            [
+                KeyboardButton(text=t(lang, "btn_search_city")),
+                KeyboardButton(text=t(lang, "btn_choose_list")),
+            ],
+            [KeyboardButton(text=t(lang, "btn_cancel"))],
         ],
         resize_keyboard=True,
         one_time_keyboard=True,
     )
+
+
+def search_results_kb(
+    results: Sequence[tuple[int, str]], lang: str
+) -> InlineKeyboardMarkup:
+    """Qidiruv natijalarini tanlash uchun inline tugmalar (index bo'yicha)."""
+    rows = [[_btn(f"📍 {name}", f"loc:pick:{idx}")] for idx, name in results]
+    rows.append([_btn(t(lang, "btn_cancel"), "loc:cancel")])
+    return _inline(rows)
 
 
 def complaint_location_kb(lang: str) -> ReplyKeyboardMarkup:
@@ -98,10 +111,36 @@ def districts_kb(
 def air_kb(lang: str, district_id: int) -> InlineKeyboardMarkup:
     return _inline(
         [
+            [_btn(t(lang, "btn_today_weather"), f"weather:today:{district_id}")],
             [
                 _btn(t(lang, "btn_refresh"), f"air:refresh:{district_id}"),
                 _btn(t(lang, "btn_other_district"), "air:other"),
-            ]
+            ],
+        ]
+    )
+
+
+def today_weather_kb(lang: str, district_id: int) -> InlineKeyboardMarkup:
+    return _inline(
+        [
+            [_btn(t(lang, "btn_weekly_weather"), f"weather:week:{district_id}")],
+            [
+                _btn(t(lang, "btn_back_to_air"), f"air:refresh:{district_id}"),
+                _btn(t(lang, "btn_refresh"), f"weather:today:{district_id}"),
+            ],
+            [_btn(t(lang, "btn_other_district"), "air:other")],
+        ]
+    )
+
+
+def weekly_weather_kb(lang: str, district_id: int) -> InlineKeyboardMarkup:
+    return _inline(
+        [
+            [_btn(t(lang, "btn_back_to_today"), f"weather:today:{district_id}")],
+            [
+                _btn(t(lang, "btn_back_to_air"), f"air:refresh:{district_id}"),
+                _btn(t(lang, "btn_refresh"), f"weather:week:{district_id}"),
+            ],
         ]
     )
 

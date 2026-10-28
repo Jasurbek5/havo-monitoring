@@ -11,6 +11,7 @@ from app.models import District, User
 from app.services.air_quality import ProviderError, get_current_reading
 from app.services.messaging import send_many
 from app.services.users import deactivate_users
+from app.services.weather import get_current_weather
 from app.tasks.celery_app import celery_app
 from app.tasks.runtime import task_context
 
@@ -94,10 +95,21 @@ async def _send_daily_digest() -> dict[str, int]:
             except ProviderError as exc:
                 log.warning("%s: ertalabki xabar o'tkazib yuborildi: %s", district.slug, exc)
                 continue
+
+            weather = None
+            try:
+                weather = await get_current_weather(
+                    ctx.redis, district, ctx.settings.owm_api_key, ttl_minutes=ctx.settings.reading_ttl_minutes
+                )
+            except Exception as exc:
+                log.warning("%s: ertalabki xabarda ob-havo olinmadi: %s", district.slug, exc)
+
             messages.extend(
                 (
                     user.telegram_id,
-                    format_digest_message(user.language, district.name(user.language), aqi=reading.aqi),
+                    format_digest_message(
+                        user.language, district.name(user.language), aqi=reading.aqi, weather=weather
+                    ),
                 )
                 for user in group
             )

@@ -9,3 +9,9 @@ class ComplaintForm(StatesGroup):
     location = State()
     text = State()
     confirm = State()
+
+
+class LocationSearchForm(StatesGroup):
+    """Shahar yoki tuman qidirish holati."""
+
+    waiting_for_query = State()

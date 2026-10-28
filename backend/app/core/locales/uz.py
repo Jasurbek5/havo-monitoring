@@ -6,37 +6,49 @@ TEXTS: dict[str, str] = {
     "lang_set": "✅ Til o'zgartirildi: O'zbekcha",
     "welcome": (
         "Assalomu alaykum! 👋\n"
-        "Bu bot Toshkent havosining holatini ko'rsatadi, sog'liq bo'yicha tavsiyalar beradi "
+        "Bu bot havo sifati va ob-havo holatini ko'rsatadi, sog'liq bo'yicha tavsiyalar beradi "
         "va havo ifloslanishi haqida murojaat qoldirish imkonini beradi."
     ),
     "welcome_back": "Yana salom! Quyidagi menyudan tanlang.",
     "menu_hint": "Iltimos, quyidagi menyudan foydalaning.",
     "cancelled": "Bekor qilindi.",
     # --- Tugmalar ---
-    "btn_air": "🌫 Havo sifati",
+    "btn_air": "🌫 Havo & Ob-havo",
+    "btn_weather": "🌤 To'liq ob-havo",
+    "btn_today_weather": "🌤 Bugungi to'liq ob-havo",
+    "btn_weekly_weather": "📅 Haftalik ob-havo (7 kun)",
+    "btn_back_to_air": "⬅️ Umumiy holat",
+    "btn_back_to_today": "⬅️ Bugungi ob-havo",
     "btn_complaint": "📝 Murojaat yuborish",
     "btn_alerts": "🔔 Ogohlantirishlar",
     "btn_district": "📍 Hududim",
     "btn_language": "🌐 Til",
     "btn_refresh": "🔄 Yangilash",
-    "btn_other_district": "📍 Boshqa tuman",
+    "btn_other_district": "📍 Boshqa hudud",
     "btn_cancel": "❌ Bekor qilish",
     "btn_skip": "⏭ O'tkazib yuborish",
     "btn_confirm": "✅ Yuborish",
     "btn_send_location": "📍 Joylashuvimni yuborish",
+    "btn_search_city": "🔍 Qidirish (shahar/tuman)",
     "btn_choose_list": "🏙 Ro'yxatdan tanlash",
     "btn_use_my_district": "📍 Hududim markazidan foydalanish",
-    "btn_other_region": "Boshqa hudud ➡️",
+    "btn_other_region": "Boshqa hududlar ➡️",
     "btn_back_city": "⬅️ Toshkent shahri",
     # --- Hudud tanlash ---
     "ask_district": (
-        "📍 Hududingizni aniqlash uchun joylashuvingizni yuboring yoki ro'yxatdan tanlang.\n\n"
-        "Joylashuv faqat eng yaqin hududni aniqlash uchun ishlatiladi va saqlanmaydi."
+        "📍 Hududingizni aniqlash uchun joylashuvingizni yuboring, shahar nomini qidiring yoki ro'yxatdan tanlang.\n\n"
+        "Joylashuv butun dunyo bo'ylab avtomatik aniqlanadi."
     ),
     "choose_district": "Hududni tanlang:",
+    "ask_search_city": (
+        "🔍 Qidirmoqchi bo'lgan shahar yoki tuman nomini kiriting:\n"
+        "<i>(Masalan: Samarqand, Urgut, Qo'qon, Xiva, Istanbul, Moskva...)</i>"
+    ),
+    "search_results": "Quyidagi natijalar topildi. O'z hududingizni tanlang:",
+    "search_not_found": "Kechirasiz, bunday nomli shahar yoki tuman topilmadi. Qayta urinib ko'ring yoki joylashuvingizni yuboring.",
     "district_set": "✅ Hudud saqlandi: <b>{name}</b>",
     "district_detected": "✅ Hudud aniqlandi: <b>{name}</b>",
-    "district_not_found": "Joylashuvingiz bo'yicha hudud topilmadi. Iltimos, ro'yxatdan tanlang.",
+    "district_not_found": "Joylashuvingiz bo'yicha hudud topilmadi. Iltimos, qidiruvdan foydalaning yoki ro'yxatdan tanlang.",
     "my_district": (
         "📍 Hududingiz: <b>{name}</b>\n"
         "O'zgartirish uchun joylashuvingizni yuboring yoki ro'yxatdan tanlang."
@@ -76,10 +88,103 @@ TEXTS: dict[str, str] = {
         "━━━━━━━━━━━━━━━━━━━━\n"
         "🕐 <i>Yangilangan: {time}</i>"
     ),
+    "air_weather_message": (
+        "📍 <b>{district}</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        "{weather_emoji} <b>Ob-havo:</b> {weather_desc}, <b>{temp}°C</b>\n"
+        "🌡 Sezilishi: <b>{feels_like}°C</b>\n"
+        "💧 Namlik: <b>{humidity}%</b> · 💨 Shamol: <b>{wind} m/s</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        "{emoji} Havo sifati: <b>{level}</b>\n"
+        "📊 AQI: <b>{aqi}</b>\n"
+        "  ▫️ PM2.5: {pm25} µg/m³ · PM10: {pm10} µg/m³\n\n"
+        "💡 <b>Tavsiya:</b>\n"
+        "{advice}\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        "🕐 <i>Yangilangan: {time}</i>"
+    ),
+    "full_weather_message": (
+        "🌤 <b>Bugungi to'liq ob-havo: {district}</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        "{weather_emoji} Holat: <b>{weather_desc}</b>\n\n"
+        "🌡 <b>Harorat ko'rsatkichlari:</b>\n"
+        "  • Hozir: <b>{temp}°C</b> <i>(sezilishi: {feels_like}°C)</i>\n"
+        "  • Bugun: Min <b>{temp_min}°C</b> / Maks <b>{temp_max}°C</b>\n\n"
+        "💧 Namlik: <b>{humidity}%</b>\n"
+        "💨 Shamol: <b>{wind_speed} m/s</b> <i>({wind_dir})</i>\n"
+        "⏱ Bosim: <b>{pressure_mmhg} mm sim. ust.</b> <i>({pressure_hpa} hPa)</i>\n"
+        "{sun_times}\n"
+        "💡 <b>Tavsiya:</b>\n"
+        "{weather_tip}\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        "🕐 <i>Yangilangan: {time}</i>"
+    ),
+    "sun_times_format": "🌅 Quyosh chiqishi: <b>{sunrise}</b> | Botishi: <b>{sunset}</b>\n",
+    "weekly_weather_header": (
+        "📅 <b>7 kunlik ob-havo prognozi: {district}</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━\n\n"
+    ),
+    "weekly_weather_item": "🔹 <b>{day_name}</b> ({date}):\n  {emoji} {condition}, <b>{temp_max}° / {temp_min}°</b> · 💨 {wind} m/s{precip}\n\n",
+    "weekly_weather_precip": " · 🌧 {prob}%",
+    "weather_unavailable": "Hozircha ob-havo ma'lumotini olib bo'lmadi. Birozdan so'ng qayta urinib ko'ring.",
     "air_stale": "\n\n⚠️ <i>Yangi ma'lumot olinmadi, oxirgi ma'lum o'lchov ko'rsatilmoqda.</i>",
     "air_unavailable": "Hozircha havo ma'lumotini olib bo'lmadi. Birozdan so'ng qayta urinib ko'ring.",
     "air_not_updated": "Ma'lumot hali yangilanmagan",
     "pick_district_view": "Qaysi hudud havosini ko'rmoqchisiz?",
+
+    # --- Shamol yo'nalishlari ---
+    "wind_n": "Shimoliy",
+    "wind_ne": "Shimoli-sharqiy",
+    "wind_e": "Sharqiy",
+    "wind_se": "Janubi-sharqiy",
+    "wind_s": "Janubiy",
+    "wind_sw": "Janubi-g'arbiy",
+    "wind_w": "G'arbiy",
+    "wind_nw": "Shimoli-g'arbiy",
+
+    # --- Hafta kunlari ---
+    "day_today": "Bugun",
+    "day_tomorrow": "Ertaga",
+    "weekday_0": "Dushanba",
+    "weekday_1": "Seshanba",
+    "weekday_2": "Chorshanba",
+    "weekday_3": "Payshanba",
+    "weekday_4": "Juma",
+    "weekday_5": "Shanba",
+    "weekday_6": "Yakshanba",
+
+    # --- Ob-havo holatlari ---
+    "weather_clear": "Ochiq havo",
+    "weather_mostly_clear": "Asosan ochiq",
+    "weather_partly_cloudy": "Qisman bulutli",
+    "weather_cloudy": "Bulutli",
+    "weather_fog": "Tuman",
+    "weather_depositing_rime_fog": "Qirovli tuman",
+    "weather_light_drizzle": "Kuchsiz shivalovchi yomg'ir",
+    "weather_moderate_drizzle": "Shivalovchi yomg'ir",
+    "weather_dense_drizzle": "Qalin shivalovchi yomg'ir",
+    "weather_slight_rain": "Kuchsiz yomg'ir",
+    "weather_moderate_rain": "Yomg'ir",
+    "weather_heavy_rain": "Kuchli yomg'ir",
+    "weather_slight_snow": "Kuchsiz qor",
+    "weather_moderate_snow": "Qor",
+    "weather_heavy_snow": "Kuchli qor",
+    "weather_snow_grains": "Qor donachalari",
+    "weather_slight_showers": "Kuchsiz jala",
+    "weather_moderate_showers": "Jala",
+    "weather_violent_showers": "Kuchli jala",
+    "weather_snow_showers": "Qor aralash jala",
+    "weather_heavy_snow_showers": "Kuchli qor aralash jala",
+    "weather_thunderstorm": "Momaqaldiroq",
+    "weather_thunderstorm_slight_hail": "Do'lli momaqaldiroq",
+    "weather_thunderstorm_heavy_hail": "Kuchli do'lli momaqaldiroq",
+
+    # --- Aqlli maslahatlar ---
+    "weather_tip_rain": "• Tashqarida yomg'ir yog'ishi kutilmoqda. Soyabon olishni unutmang! 🌧",
+    "weather_tip_snow": "• Qor yog'ishi mumkin. Qalinroq kiyining va yo'lda ehtiyot bo'ling! ❄️",
+    "weather_tip_cold": "• Havo salqin. Shamollab qolmaslik uchun iliqroq kiyining! 🧥",
+    "weather_tip_hot": "• Havo ancha issiq. Ko'proq suv iching va quyoshdan saqlaning! 🥤",
+    "weather_tip_pleasant": "• Havo juda yoqimli va me'yorida. Sayr qilish uchun qulay vaqt! 🌿",
     # --- Ogohlantirishlar ---
     "alert_message": (
         "🔴 <b>Diqqat: {district} hududida havo xavfli darajada!</b>\n"
@@ -95,6 +200,17 @@ TEXTS: dict[str, str] = {
         "📍 Hudud: <b>{district}</b>\n"
         "━━━━━━━━━━━━━━━━━━━━\n"
         "{emoji} Holat: <b>{level}</b>\n"
+        "📊 AQI: <b>{aqi}</b>\n\n"
+        "💡 <b>Tavsiya:</b>\n"
+        "{advice}"
+    ),
+    "digest_message_weather": (
+        "☀️ <b>Xayrli tong!</b>\n"
+        "📍 Hudud: <b>{district}</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        "{weather_emoji} Bugun ob-havo: <b>{temp}°C</b> <i>({weather_desc})</i>\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        "{emoji} Havo sifati: <b>{level}</b>\n"
         "📊 AQI: <b>{aqi}</b>\n\n"
         "💡 <b>Tavsiya:</b>\n"
         "{advice}"
