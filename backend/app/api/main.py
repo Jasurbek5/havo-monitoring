@@ -113,6 +113,13 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Havo monitoringi API", version="0.1.0", lifespan=lifespan)
 
 
+@app.get("/")
+@app.head("/")
+async def root() -> dict[str, str]:
+    """Asosiy sahifa (Render ping va browser tekshiruvi uchun)."""
+    return {"status": "ok", "service": "havo-monitoring"}
+
+
 @app.get("/health")
 async def health() -> dict[str, str]:
     """Jarayon tirik (Docker healthcheck shuni so'raydi)."""
