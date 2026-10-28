@@ -108,53 +108,138 @@ def districts_kb(
     return _inline(rows)
 
 
-def air_kb(lang: str, district_id: int) -> InlineKeyboardMarkup:
-    return _inline(
-        [
-            [_btn(t(lang, "btn_today_weather"), f"weather:today:{district_id}")],
+def air_kb(
+    lang: str,
+    district_id: int,
+    *,
+    switch_district: District | None = None,
+    is_home: bool = False,
+) -> InlineKeyboardMarkup:
+    rows: list[list[InlineKeyboardButton]] = [
+        [_btn(t(lang, "btn_today_weather"), f"weather:today:{district_id}")],
+    ]
+    if switch_district is not None:
+        switch_label = (
+            t(lang, "btn_switch_to_other", name=switch_district.name(lang))
+            if is_home
+            else t(lang, "btn_switch_to_home", name=switch_district.name(lang))
+        )
+        rows.append(
+            [
+                _btn(t(lang, "btn_refresh"), f"air:refresh:{district_id}"),
+                _btn(switch_label, f"air:switch:{switch_district.id}"),
+            ]
+        )
+        rows.append([_btn(t(lang, "btn_all_districts"), "air:other")])
+    else:
+        rows.append(
             [
                 _btn(t(lang, "btn_refresh"), f"air:refresh:{district_id}"),
                 _btn(t(lang, "btn_other_district"), "air:other"),
-            ],
-        ]
-    )
+            ]
+        )
+    return _inline(rows)
 
 
-def today_weather_kb(lang: str, district_id: int) -> InlineKeyboardMarkup:
-    return _inline(
+def today_weather_kb(
+    lang: str,
+    district_id: int,
+    *,
+    switch_district: District | None = None,
+    is_home: bool = False,
+) -> InlineKeyboardMarkup:
+    rows: list[list[InlineKeyboardButton]] = [
+        [_btn(t(lang, "btn_weekly_weather"), f"weather:week:{district_id}")],
         [
-            [_btn(t(lang, "btn_weekly_weather"), f"weather:week:{district_id}")],
+            _btn(t(lang, "btn_back_to_air"), f"air:refresh:{district_id}"),
+            _btn(t(lang, "btn_refresh"), f"weather:today:{district_id}"),
+        ],
+    ]
+    if switch_district is not None:
+        switch_label = (
+            t(lang, "btn_switch_to_other", name=switch_district.name(lang))
+            if is_home
+            else t(lang, "btn_switch_to_home", name=switch_district.name(lang))
+        )
+        rows.append(
             [
-                _btn(t(lang, "btn_back_to_air"), f"air:refresh:{district_id}"),
-                _btn(t(lang, "btn_refresh"), f"weather:today:{district_id}"),
-            ],
-            [_btn(t(lang, "btn_other_district"), "air:other")],
-        ]
-    )
+                _btn(switch_label, f"weather:today:{switch_district.id}"),
+                _btn(t(lang, "btn_all_districts"), "air:other"),
+            ]
+        )
+    else:
+        rows.append([_btn(t(lang, "btn_other_district"), "air:other")])
+    return _inline(rows)
 
 
-def weekly_weather_kb(lang: str, district_id: int) -> InlineKeyboardMarkup:
-    return _inline(
+def weekly_weather_kb(
+    lang: str,
+    district_id: int,
+    *,
+    switch_district: District | None = None,
+    is_home: bool = False,
+) -> InlineKeyboardMarkup:
+    rows: list[list[InlineKeyboardButton]] = [
+        [_btn(t(lang, "btn_back_to_today"), f"weather:today:{district_id}")],
         [
-            [_btn(t(lang, "btn_back_to_today"), f"weather:today:{district_id}")],
-            [
-                _btn(t(lang, "btn_back_to_air"), f"air:refresh:{district_id}"),
-                _btn(t(lang, "btn_refresh"), f"weather:week:{district_id}"),
-            ],
-        ]
-    )
+            _btn(t(lang, "btn_back_to_air"), f"air:refresh:{district_id}"),
+            _btn(t(lang, "btn_refresh"), f"weather:week:{district_id}"),
+        ],
+    ]
+    if switch_district is not None:
+        switch_label = (
+            t(lang, "btn_switch_to_other", name=switch_district.name(lang))
+            if is_home
+            else t(lang, "btn_switch_to_home", name=switch_district.name(lang))
+        )
+        rows.append([_btn(switch_label, f"weather:week:{switch_district.id}")])
+    return _inline(rows)
 
 
 def settings_kb(user: User, lang: str) -> InlineKeyboardMarkup:
     def state(flag: bool) -> str:
         return t(lang, "state_on" if flag else "state_off")
 
+    home_name = user.home_district.name(lang) if user.home_district else "—"
+    digest_time = user.digest_time or "07:00"
+
     return _inline(
         [
             [_btn(t(lang, "toggle_alert", state=state(user.alert_enabled)), "set:alert")],
             [_btn(t(lang, "toggle_digest", state=state(user.daily_digest)), "set:digest")],
+            [_btn(t(lang, "toggle_time", time=digest_time), "set:time")],
+            [_btn(t(lang, "toggle_home", name=home_name), "set:home")],
         ]
     )
+
+
+def digest_time_kb(current_time: str, lang: str) -> InlineKeyboardMarkup:
+    times = ["06:00", "07:00", "08:00", "09:00", "10:00", "11:00"]
+    buttons = []
+    for tm in times:
+        mark = "✓ " if tm == current_time else ""
+        buttons.append(_btn(f"{mark}{tm}", f"time:pick:{tm}"))
+    rows = _chunk(buttons, 3)
+    rows.append([_btn(t(lang, "btn_back"), "set:back")])
+    return _inline(rows)
+
+
+def home_settings_kb(user: User, lang: str) -> InlineKeyboardMarkup:
+    rows = []
+    if user.district and (not user.home_district or user.home_district_id != user.district_id):
+        rows.append(
+            [
+                _btn(
+                    t(lang, "btn_set_current_as_home", name=user.district.name(lang)),
+                    "home:set_current",
+                )
+            ]
+        )
+    rows.append([_btn(t(lang, "btn_choose_from_list"), "home:choose_list")])
+    if user.home_district_id:
+        rows.append([_btn(t(lang, "btn_clear_home"), "home:clear")])
+    rows.append([_btn(t(lang, "btn_back"), "set:back")])
+    return _inline(rows)
 
 
 def categories_kb(lang: str) -> InlineKeyboardMarkup:

@@ -47,6 +47,18 @@ TEXTS: dict[str, str] = {
     "search_results": "The following results were found. Select your location:",
     "search_not_found": "Sorry, no city or district found with that name. Please try again or send your location.",
     "district_set": "✅ District saved: <b>{name}</b>",
+    "district_set_first": (
+        "✅ District saved: <b>{name}</b>\n\n"
+        "🏠 This location has been automatically set as your <b>Home District</b>. "
+        "Morning weather digests and hazardous air alerts will always be sent for this district "
+        "even when you travel!"
+    ),
+    "district_changed_notice": (
+        "📍 Current district: <b>{current}</b>\n\n"
+        "🏠 <b>Note:</b> Your primary home district remains <b>{home}</b>.\n"
+        "Morning digests and hazardous air alerts will continue to arrive for <b>{home}</b>. "
+        "You can change your home district anytime in the «Alerts» settings."
+    ),
     "district_detected": "✅ District detected: <b>{name}</b>",
     "district_not_found": "Could not determine district from your location. Please use search or choose from the list.",
     "my_district": (
@@ -214,10 +226,51 @@ TEXTS: dict[str, str] = {
         "📊 AQI: <b>{aqi}</b>\n\n"
         "💡 <b>Recommendations:</b>\n"
         "{advice}"
+        "{switch_hint}"
     ),
-    "settings_title": "🔔 <b>Alerts & Notifications</b>\nSettings for hazardous air alerts and morning digest:",
+    "digest_message_weather_home": (
+        "☀️ <b>Good morning!</b>\n"
+        "🏠 <b>Home district: {district}</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        "{weather_emoji} Weather today: <b>{temp}°C</b> <i>({weather_desc})</i>\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        "{emoji} Air quality: <b>{level}</b>\n"
+        "📊 AQI: <b>{aqi}</b>\n\n"
+        "💡 <b>Recommendations:</b>\n"
+        "{advice}"
+        "{switch_hint}"
+    ),
+    "digest_switch_hint": (
+        "\n\n📍 <i>To view weather for your visited location ({other_district}), tap the button below.</i>"
+    ),
+    "settings_title": "🔔 <b>Alerts & Settings</b>\nHazardous air alerts, morning digest, and home district settings:",
     "toggle_alert": "🚨 Hazardous air alert: {state}",
     "toggle_digest": "☀️ Morning digest: {state}",
+    "toggle_time": "⏰ Digest time: {time}",
+    "toggle_home": "🏠 Home district: {name}",
+    "choose_digest_time": "⏰ Choose morning digest time (Tashkent timezone):",
+    "digest_time_set": "✅ Morning digest time set to: <b>{time}</b>",
+    "home_title": (
+        "🏠 <b>Home District Settings</b>\n\n"
+        "Even when traveling to another city or district, your morning digests and "
+        "hazardous air alerts will always be sent for your Home district.\n\n"
+        "Current home district: <b>{name}</b>"
+    ),
+    "btn_set_current_as_home": "🏠 Set current ({name}) as home",
+    "btn_choose_from_list": "🏙 Choose from list",
+    "btn_clear_home": "❌ Reset home district",
+    "btn_back": "⬅️ Back",
+    "home_district_set": "✅ Home district saved: <b>{name}</b>",
+    "home_district_cleared": "Home district reset.",
+    "btn_switch_to_home": "🏠 {name} (Home)",
+    "btn_switch_to_other": "📍 {name}",
+    "btn_all_districts": "🏙 Other districts",
+    "my_district_info": (
+        "📍 Current district: <b>{current}</b>\n"
+        "🏠 Home district: <b>{home}</b>\n\n"
+        "To change, share your location or choose an option below:"
+    ),
+    "btn_set_home_prompt": "🏠 Save this district as home",
     "state_on": "enabled ✅",
     "state_off": "disabled ❌",
     # --- Complaints / Reports ---

@@ -10,6 +10,7 @@ from aiogram.types import CallbackQuery, Message
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.bot.helpers import safe_delete_message
 from app.bot.keyboards import (
     cancel_kb,
     categories_kb,
@@ -75,6 +76,7 @@ async def start_complaint(
     lang: str,
     settings: Settings,
 ) -> None:
+    await safe_delete_message(message)
     await state.clear()
     if user.district_id is None:
         await message.answer(t(lang, "need_district"), reply_markup=district_prompt_kb(lang))

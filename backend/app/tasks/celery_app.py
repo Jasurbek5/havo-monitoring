@@ -28,7 +28,7 @@ celery_app.conf.update(
         },
         "daily-digest": {
             "task": "notify.daily_digest",
-            "schedule": crontab(hour=settings.daily_digest_hour, minute=0),
+            "schedule": crontab(minute=0),
         },
     },
 )

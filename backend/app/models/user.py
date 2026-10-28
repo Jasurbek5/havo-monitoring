@@ -14,16 +14,31 @@ class User(CreatedAtMixin, Base):
     telegram_id: Mapped[int] = mapped_column(BigInteger, unique=True, index=True)
     language: Mapped[str] = mapped_column(String(2), default="uz", server_default="uz")
 
-    # Foydalanuvchining GPS koordinatasi saqlanmaydi, faqat aniqlangan hudud.
+    # Joriy tanlangan yoki aniqlangan hudud (boshqa joyga borganda o'zgaradi).
     district_id: Mapped[int | None] = mapped_column(
         ForeignKey("districts.id", ondelete="SET NULL"), index=True
+    )
+
+    # Asosiy uy hududi: foydalanuvchi safarda bo'lsa ham ertalabki xabar va ogohlantirishlar
+    # shu hudud bo'yicha yuboriladi.
+    home_district_id: Mapped[int | None] = mapped_column(
+        ForeignKey("districts.id", ondelete="SET NULL"), index=True, nullable=True
     )
 
     # Havo xavfli darajaga yetganda push-xabar (AQI > chegara)
     alert_enabled: Mapped[bool] = mapped_column(default=True, server_default=sa_true())
     # Har kuni ertalabki xabar (opt-in)
     daily_digest: Mapped[bool] = mapped_column(default=False, server_default=sa_false())
+    # Ertalabki xabar vaqti (masalan "07:00", "08:00")
+    digest_time: Mapped[str] = mapped_column(
+        String(5), default="07:00", server_default="07:00"
+    )
     # Bot bloklangan bo'lsa False; foydalanuvchi qaytib yozsa yana True bo'ladi.
     is_active: Mapped[bool] = mapped_column(default=True, server_default=sa_true())
 
-    district: Mapped[District | None] = relationship(lazy="joined")
+    district: Mapped[District | None] = relationship(
+        foreign_keys=[district_id], lazy="joined"
+    )
+    home_district: Mapped[District | None] = relationship(
+        foreign_keys=[home_district_id], lazy="joined"
+    )

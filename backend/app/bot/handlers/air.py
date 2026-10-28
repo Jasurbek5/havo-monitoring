@@ -10,6 +10,7 @@ from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.bot.handlers.districts import send_district_list
+from app.bot.helpers import safe_delete_message
 from app.bot.keyboards import air_kb, district_prompt_kb, today_weather_kb, weekly_weather_kb
 from app.config import Settings
 from app.core.i18n import all_translations, t
@@ -112,6 +113,25 @@ async def build_weekly_weather_text(
 # ---------------------------------------------------------------------------
 
 
+def get_switch_context(user: User, current_district_id: int) -> tuple[District | None, bool]:
+    """Qaytadi: (switch_district, is_home).
+
+    Foydalanuvchi uyda bo'lsa, oxirgi boshqa hududga o'tish tugmasi chiqadi;
+    boshqa hududda bo'lsa, uyga qaytish tugmasi chiqadi.
+    """
+    home = user.home_district
+    current = user.district
+    if not home:
+        return None, False
+    if current and home.id != current.id:
+        if current_district_id == home.id:
+            return current, True
+        return home, False
+    if current_district_id != home.id:
+        return home, False
+    return None, False
+
+
 AIR_BUTTONS = all_translations("btn_air") | {"🌫 Havo sifati", "🌫 Качество воздуха", "🌫 Air quality"}
 WEATHER_BUTTONS = all_translations("btn_weather") | {"🌤 Ob-havo", "🌤 Погода", "🌤 Weather", "🌤 To'liq ob-havo"}
 
@@ -128,13 +148,20 @@ async def show_air(
     lang: str,
 ) -> None:
     """Umumiy xabar (Ob-havo + Havo sifati)."""
+    await safe_delete_message(message)
     await state.clear()
-    district = user.district
+    district = user.district or user.home_district
     if district is None:
         await message.answer(t(lang, "need_district"), reply_markup=district_prompt_kb(lang))
         return
+    switch_district, is_home = get_switch_context(user, district.id)
     text = await build_air_text(session, redis, provider, settings, district, lang)
-    await message.answer(text, reply_markup=air_kb(lang, district.id))
+    await message.answer(
+        text,
+        reply_markup=air_kb(
+            lang, district.id, switch_district=switch_district, is_home=is_home
+        ),
+    )
 
 
 @router.message(F.text.in_(WEATHER_BUTTONS))
@@ -147,13 +174,20 @@ async def show_today_weather(
     lang: str,
 ) -> None:
     """Bugungi to'liq ob-havo."""
+    await safe_delete_message(message)
     await state.clear()
-    district = user.district
+    district = user.district or user.home_district
     if district is None:
         await message.answer(t(lang, "need_district"), reply_markup=district_prompt_kb(lang))
         return
+    switch_district, is_home = get_switch_context(user, district.id)
     text = await build_today_weather_text(redis, settings, district, lang)
-    await message.answer(text, reply_markup=today_weather_kb(lang, district.id))
+    await message.answer(
+        text,
+        reply_markup=today_weather_kb(
+            lang, district.id, switch_district=switch_district, is_home=is_home
+        ),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -168,6 +202,7 @@ async def refresh_air(
     redis: Redis,
     provider: AirQualityProvider,
     settings: Settings,
+    user: User,
     lang: str,
 ) -> None:
     await call.answer()
@@ -176,9 +211,46 @@ async def refresh_air(
     if district is None or not isinstance(call.message, Message):
         return
 
+    switch_district, is_home = get_switch_context(user, district.id)
     text = await build_air_text(session, redis, provider, settings, district, lang)
     try:
-        await call.message.edit_text(text, reply_markup=air_kb(lang, district.id))
+        await call.message.edit_text(
+            text,
+            reply_markup=air_kb(
+                lang, district.id, switch_district=switch_district, is_home=is_home
+            ),
+        )
+    except TelegramBadRequest as exc:
+        if "message is not modified" not in str(exc):
+            raise
+
+
+@router.callback_query(F.data.startswith("air:switch:"))
+async def switch_air_district(
+    call: CallbackQuery,
+    session: AsyncSession,
+    redis: Redis,
+    provider: AirQualityProvider,
+    settings: Settings,
+    user: User,
+    lang: str,
+) -> None:
+    """Uy va oxirgi tanlangan boshqa hudud o'rtasida 1 bosishda tezkor o'tish."""
+    await call.answer()
+    district_id = int((call.data or "").rsplit(":", 1)[1])
+    district = await get_district(session, district_id)
+    if district is None or not isinstance(call.message, Message):
+        return
+
+    switch_district, is_home = get_switch_context(user, district.id)
+    text = await build_air_text(session, redis, provider, settings, district, lang)
+    try:
+        await call.message.edit_text(
+            text,
+            reply_markup=air_kb(
+                lang, district.id, switch_district=switch_district, is_home=is_home
+            ),
+        )
     except TelegramBadRequest as exc:
         if "message is not modified" not in str(exc):
             raise
@@ -190,6 +262,7 @@ async def view_today_weather(
     session: AsyncSession,
     redis: Redis,
     settings: Settings,
+    user: User,
     lang: str,
 ) -> None:
     """Bugungi to'liq ob-havoga o'tish yoki yangilash."""
@@ -199,9 +272,15 @@ async def view_today_weather(
     if district is None or not isinstance(call.message, Message):
         return
 
+    switch_district, is_home = get_switch_context(user, district.id)
     text = await build_today_weather_text(redis, settings, district, lang)
     try:
-        await call.message.edit_text(text, reply_markup=today_weather_kb(lang, district.id))
+        await call.message.edit_text(
+            text,
+            reply_markup=today_weather_kb(
+                lang, district.id, switch_district=switch_district, is_home=is_home
+            ),
+        )
     except TelegramBadRequest as exc:
         if "message is not modified" not in str(exc):
             raise
@@ -213,6 +292,7 @@ async def view_weekly_weather(
     session: AsyncSession,
     redis: Redis,
     settings: Settings,
+    user: User,
     lang: str,
 ) -> None:
     """7 kunlik haftalik prognozga o'tish yoki yangilash."""
@@ -222,9 +302,15 @@ async def view_weekly_weather(
     if district is None or not isinstance(call.message, Message):
         return
 
+    switch_district, is_home = get_switch_context(user, district.id)
     text = await build_weekly_weather_text(redis, settings, district, lang)
     try:
-        await call.message.edit_text(text, reply_markup=weekly_weather_kb(lang, district.id))
+        await call.message.edit_text(
+            text,
+            reply_markup=weekly_weather_kb(
+                lang, district.id, switch_district=switch_district, is_home=is_home
+            ),
+        )
     except TelegramBadRequest as exc:
         if "message is not modified" not in str(exc):
             raise
@@ -246,6 +332,7 @@ async def view_district(
     redis: Redis,
     provider: AirQualityProvider,
     settings: Settings,
+    user: User,
     lang: str,
 ) -> None:
     """Boshqa hudud havosini ko'rsatadi (foydalanuvchining saqlangan hududi o'zgarmaydi)."""
@@ -255,6 +342,12 @@ async def view_district(
         await call.answer()
         return
 
+    switch_district, is_home = get_switch_context(user, district.id)
     text = await build_air_text(session, redis, provider, settings, district, lang)
-    await call.message.edit_text(text, reply_markup=air_kb(lang, district.id))
+    await call.message.edit_text(
+        text,
+        reply_markup=air_kb(
+            lang, district.id, switch_district=switch_district, is_home=is_home
+        ),
+    )
     await call.answer()

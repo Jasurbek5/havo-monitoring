@@ -5,6 +5,7 @@ from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
+from app.bot.helpers import safe_delete_message
 from app.bot.keyboards import district_prompt_kb, language_kb, main_menu_kb
 from app.core.i18n import LANGS, t
 from app.models import User
@@ -14,6 +15,7 @@ router = Router(name="start")
 
 @router.message(CommandStart())
 async def cmd_start(message: Message, state: FSMContext, user: User, lang: str) -> None:
+    await safe_delete_message(message)
     await state.clear()
     if user.district_id is None:
         # Yangi foydalanuvchi: avval til, keyin hudud
@@ -30,7 +32,7 @@ async def on_language(call: CallbackQuery, user: User) -> None:
         return
 
     user.language = new_lang
-    await call.message.edit_reply_markup(reply_markup=None)
+    await safe_delete_message(call.message)
     if user.district_id is None:
         await call.message.answer(t(new_lang, "welcome"))
         await call.message.answer(t(new_lang, "ask_district"), reply_markup=district_prompt_kb(new_lang))

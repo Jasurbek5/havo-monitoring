@@ -47,6 +47,18 @@ TEXTS: dict[str, str] = {
     "search_results": "Quyidagi natijalar topildi. O'z hududingizni tanlang:",
     "search_not_found": "Kechirasiz, bunday nomli shahar yoki tuman topilmadi. Qayta urinib ko'ring yoki joylashuvingizni yuboring.",
     "district_set": "✅ Hudud saqlandi: <b>{name}</b>",
+    "district_set_first": (
+        "✅ Hudud saqlandi: <b>{name}</b>\n\n"
+        "🏠 Bu hudud avtomatik ravishda sizning <b>Uy hududingiz</b> qilib belgilandi. "
+        "Ertalabki ob-havo va xavfli havo ogohlantirishlari shu hudud bo'yicha yuboriladi. "
+        "Boshqa joyga borganingizda ham uyingiz havosidan xabardor bo'lib turasiz!"
+    ),
+    "district_changed_notice": (
+        "📍 Joriy hududingiz: <b>{current}</b>\n\n"
+        "🏠 <b>Eslatma:</b> Sizning asosiy uy hududingiz — <b>{home}</b>.\n"
+        "Ertalabki xabarnoma va xavfli havo ogohlantirishlari aynan <b>{home}</b> bo'yicha kelaveradi. "
+        "Xohlasangiz «Ogohlantirishlar» menyusidan uy hududini o'zgartirishingiz mumkin."
+    ),
     "district_detected": "✅ Hudud aniqlandi: <b>{name}</b>",
     "district_not_found": "Joylashuvingiz bo'yicha hudud topilmadi. Iltimos, qidiruvdan foydalaning yoki ro'yxatdan tanlang.",
     "my_district": (
@@ -214,10 +226,51 @@ TEXTS: dict[str, str] = {
         "📊 AQI: <b>{aqi}</b>\n\n"
         "💡 <b>Tavsiya:</b>\n"
         "{advice}"
+        "{switch_hint}"
     ),
-    "settings_title": "🔔 <b>Ogohlantirishlar</b>\nXavfli havo va ertalabki xabar sozlamalari:",
+    "digest_message_weather_home": (
+        "☀️ <b>Xayrli tong!</b>\n"
+        "🏠 <b>Uy hududingiz: {district}</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        "{weather_emoji} Bugun ob-havo: <b>{temp}°C</b> <i>({weather_desc})</i>\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        "{emoji} Havo sifati: <b>{level}</b>\n"
+        "📊 AQI: <b>{aqi}</b>\n\n"
+        "💡 <b>Tavsiya:</b>\n"
+        "{advice}"
+        "{switch_hint}"
+    ),
+    "digest_switch_hint": (
+        "\n\n📍 <i>Hozirgi ({other_district}) hududi ma'lumotini ko'rish uchun pastdagi tugmani bosing.</i>"
+    ),
+    "settings_title": "🔔 <b>Ogohlantirishlar va bildirishnomalar</b>\nXavfli havo, ertalabki xabar va uy hududi sozlamalari:",
     "toggle_alert": "🚨 Xavfli havo xabari: {state}",
     "toggle_digest": "☀️ Ertalabki xabar: {state}",
+    "toggle_time": "⏰ Xabar vaqti: {time}",
+    "toggle_home": "🏠 Uy hududi: {name}",
+    "choose_digest_time": "⏰ Ertalabki xabar yuboriladigan vaqtni tanlang (Toshkent vaqti bilan):",
+    "digest_time_set": "✅ Ertalabki xabar vaqti: <b>{time}</b>",
+    "home_title": (
+        "🏠 <b>Uy hududi sozlamasi</b>\n\n"
+        "Boshqa shahar yoki hududga borganda ham ertalabki xabarnoma va xavfli havo ogohlantirishlari "
+        "aynan shu uy hududingiz bo'yicha yuboriladi.\n\n"
+        "Hozirgi uy hududingiz: <b>{name}</b>"
+    ),
+    "btn_set_current_as_home": "🏠 Hozirgi hududni ({name}) uy qilish",
+    "btn_choose_from_list": "🏙 Ro'yxatdan tanlash",
+    "btn_clear_home": "❌ Uy hududini o'chirish",
+    "btn_back": "⬅️ Orqaga",
+    "home_district_set": "✅ Uy hududi saqlandi: <b>{name}</b>",
+    "home_district_cleared": "Uy hududi sozlamasi o'chirildi.",
+    "btn_switch_to_home": "🏠 {name} (Uy)",
+    "btn_switch_to_other": "📍 {name}",
+    "btn_all_districts": "🏙 Boshqa hududlar",
+    "my_district_info": (
+        "📍 Joriy hududingiz: <b>{current}</b>\n"
+        "🏠 Uy hududingiz: <b>{home}</b>\n\n"
+        "O'zgartirish uchun joylashuvingizni yuboring yoki quyidagilardan tanlang:"
+    ),
+    "btn_set_home_prompt": "🏠 Shu hududni uy qilib saqlash",
     "state_on": "yoqilgan ✅",
     "state_off": "o'chirilgan ❌",
     # --- Murojaat ---

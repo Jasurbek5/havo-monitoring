@@ -217,13 +217,21 @@ def format_digest_message(
     *,
     aqi: int,
     weather: CurrentWeather | None = None,
+    is_home: bool = False,
+    other_district_name: str | None = None,
 ) -> str:
     level = level_for(aqi)
+    switch_hint = (
+        t(lang, "digest_switch_hint", other_district=other_district_name)
+        if other_district_name
+        else ""
+    )
+    key = "digest_message_weather_home" if is_home else "digest_message_weather"
     if weather is not None:
         weather_desc = weather_condition_label(lang, weather.weather_code)
         return t(
             lang,
-            "digest_message_weather",
+            key,
             district=district_name,
             weather_emoji=weather.emoji,
             temp=f"{weather.temp:+0.1f}",
@@ -232,13 +240,15 @@ def format_digest_message(
             level=level_label(lang, level),
             aqi=aqi,
             advice=advice_for(lang, level),
+            switch_hint=switch_hint,
         )
     return t(
         lang,
-        "digest_message",
+        "digest_message_weather_home" if is_home else "digest_message",
         district=district_name,
         aqi=aqi,
         emoji=LEVEL_EMOJI[level],
         level=level_label(lang, level),
         advice=advice_for(lang, level),
+        switch_hint=switch_hint,
     )

@@ -33,6 +33,11 @@ def next_daily_run(now: datetime, hour: int, tz: tzinfo) -> datetime:
     return target
 
 
+def next_hourly_run(now: datetime) -> datetime:
+    """`now` dan keyingi birinchi to'liq soat :00 (masalan 07:00, 08:00)."""
+    return now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+
+
 async def _sleep_until(target: datetime) -> None:
     while (remaining := (target - datetime.now(UTC)).total_seconds()) > 0:
         await asyncio.sleep(min(remaining, SLEEP_STEP_SECONDS))
@@ -55,26 +60,23 @@ async def _every(name: str, job: Callable[[], Awaitable[object]], interval: time
         target = datetime.now(UTC) + interval
 
 
-async def _daily(
-    name: str, job: Callable[[], Awaitable[object]], hour: int, tz: tzinfo
-) -> None:
+async def _hourly_digest(tz: tzinfo) -> None:
+    """Har soat boshida (:00) shu soat uchun belgilangan ertalabki xabarlarni yuboradi."""
     while True:
-        target = next_daily_run(datetime.now(UTC), hour, tz)
+        target = next_hourly_run(datetime.now(UTC))
         await _sleep_until(target)
-        if datetime.now(UTC) - target > DIGEST_MAX_LATE:
-            log.warning("%s: vaqti o'tib ketgan (kompyuter uxlagan bo'lishi mumkin), o'tkazildi", name)
-            continue
-        await _run_job(name, job)
+        local_time = datetime.now(tz)
+        time_str = f"{local_time.hour:02d}:00"
+        await _run_job(f"notify.daily_digest:{time_str}", lambda: _send_daily_digest(time_str))
 
 
 async def run_lite_scheduler(settings: Settings) -> None:
     log.info(
-        "Yengil jadval ishga tushdi: havo har %d daqiqada, ertalabki xabar %02d:00 (%s)",
+        "Yengil jadval ishga tushdi: havo har %d daqiqada, ertalabki xabarnoma soatbay tekshiriladi (%s)",
         settings.fetch_interval_minutes,
-        settings.daily_digest_hour,
         settings.timezone,
     )
     await asyncio.gather(
         _every("air.fetch_all", _fetch_all, timedelta(minutes=settings.fetch_interval_minutes)),
-        _daily("notify.daily_digest", _send_daily_digest, settings.daily_digest_hour, settings.tz),
+        _hourly_digest(settings.tz),
     )

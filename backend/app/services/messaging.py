@@ -5,6 +5,7 @@ import enum
 import logging
 from collections.abc import Iterable
 from dataclasses import dataclass, field
+from typing import Any
 
 from aiogram import Bot
 from aiogram.exceptions import TelegramAPIError, TelegramForbiddenError, TelegramRetryAfter
@@ -42,16 +43,22 @@ async def safe_send(bot: Bot, chat_id: int, text: str, *, retries: int = 2, **kw
 
 async def send_many(
     bot: Bot,
-    messages: Iterable[tuple[int, str]],
+    messages: Iterable[tuple[int, str] | tuple[int, str, Any]],
     *,
     rate_per_second: float = 25.0,
     **kwargs,
 ) -> BroadcastResult:
-    """(telegram_id, matn) juftliklarini Telegram limitidan (~30/s) past tezlikda yuboradi."""
+    """(telegram_id, matn, [reply_markup]) Telegram limitidan (~30/s) past tezlikda yuboradi."""
     result = BroadcastResult()
     interval = 1.0 / rate_per_second
-    for chat_id, text in messages:
-        status = await safe_send(bot, chat_id, text, **kwargs)
+    for item in messages:
+        if len(item) == 3:
+            chat_id, text, reply_markup = item  # type: ignore[misc]
+            item_kwargs = {**kwargs, "reply_markup": reply_markup} if reply_markup is not None else kwargs
+        else:
+            chat_id, text = item
+            item_kwargs = kwargs
+        status = await safe_send(bot, chat_id, text, **item_kwargs)
         if status is SendStatus.OK:
             result.sent += 1
         elif status is SendStatus.BLOCKED:
