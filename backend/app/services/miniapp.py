@@ -180,12 +180,33 @@ async def get_miniapp_full_data(
     lang: str = "uz",
 ) -> dict[str, Any]:
     """Mini App uchun to'liq havo va ob-havo ma'lumotlari to'plami."""
-    # 1. Havo sifati (Reading)
+    # 1. Ob-havo (Joriy va haftalik)
+    tz_offset = 18000  # Default UTC+5
+    weather: CurrentWeather | None = None
+    weekly: WeeklyForecast | None = None
+    try:
+        weather = await get_current_weather(
+            redis, district, settings.owm_api_key, ttl_minutes=settings.reading_ttl_minutes
+        )
+        if weather:
+            tz_offset = weather.timezone_offset
+    except Exception as exc:
+        log.warning("MiniApp: weather olinmadi: %r", exc)
+
+    try:
+        weekly = await get_weekly_weather(
+            redis, district, settings.owm_api_key, ttl_minutes=settings.reading_ttl_minutes
+        )
+    except Exception as exc:
+        log.warning("MiniApp: weekly olinmadi: %r", exc)
+
+    # 2. Havo sifati (Reading)
     aqi_val = 50
     level = AQILevel.GOOD
     reading_pm25 = None
     reading_pm10 = None
-    updated_at_str = "--:--"
+    now_local = datetime.now(timezone(timedelta(seconds=tz_offset)))
+    updated_at_str = now_local.strftime("%H:%M")
     try:
         reading = await get_current_reading(
             session, redis, provider, district, ttl_minutes=settings.reading_ttl_minutes
@@ -198,25 +219,7 @@ async def get_miniapp_full_data(
     except Exception as exc:
         log.warning("MiniApp: havo sifati olinmadi: %r", exc)
 
-    # 2. Ob-havo (Joriy va haftalik)
-    weather: CurrentWeather | None = None
-    weekly: WeeklyForecast | None = None
-    try:
-        weather = await get_current_weather(
-            redis, district, settings.owm_api_key, ttl_minutes=settings.reading_ttl_minutes
-        )
-    except Exception as exc:
-        log.warning("MiniApp: weather olinmadi: %r", exc)
-
-    try:
-        weekly = await get_weekly_weather(
-            redis, district, settings.owm_api_key, ttl_minutes=settings.reading_ttl_minutes
-        )
-    except Exception as exc:
-        log.warning("MiniApp: weekly olinmadi: %r", exc)
-
     # 3. Soatlik prognoz (24 soat)
-    tz_offset = weather.timezone_offset if weather else 18000
     hourly = await fetch_hourly_forecast(
         redis,
         district.lat,
@@ -242,9 +245,9 @@ async def get_miniapp_full_data(
         elif now_local > sunset_local:
             sun_progress = 1.0
         else:
-            total_sec = (sunset_local - sunrise_local).total_seconds()
+            total_sec = max(1.0, (sunset_local - sunrise_local).total_seconds())
             curr_sec = (now_local - sunrise_local).total_seconds()
-            sun_progress = round(curr_sec / max(1.0, total_sec), 2)
+            sun_progress = max(0.0, min(1.0, round(curr_sec / total_sec, 2)))
 
     # 4. Haftalik prognozni formatlash
     weekly_formatted = []
@@ -274,13 +277,12 @@ async def get_miniapp_full_data(
         uv_val = 5
         uv_cat = "Yuqori (5)" if lang == "uz" else ("Высокий (5)" if lang == "ru" else "High (5)")
 
-    # Ob-havo holati matni
+    # Ob-havo holati matni (til bo'yicha to'g'ri tarjima)
     emoji, cond_key = get_wmo_info(weather.weather_code if weather else 0)
-    cond_name = (
-        weather.description.capitalize()
-        if weather and weather.description
-        else t(lang, cond_key)
-    )
+    if lang == "en" and weather and weather.description:
+        cond_name = weather.description.capitalize()
+    else:
+        cond_name = t(lang, cond_key)
 
     return {
         "district": {

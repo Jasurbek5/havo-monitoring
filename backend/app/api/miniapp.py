@@ -202,13 +202,6 @@ def _build_miniapp_html() -> str:
         .theme-fog {
             background: radial-gradient(circle at 50% 10%, #71717a 0%, #52525b 50%, #27272a 100%);
         }
-        @keyframes pulse-soft {
-            0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.04); opacity: 0.9; }
-        }
-        .pulse-soft {
-            animation: pulse-soft 3s ease-in-out infinite;
-        }
         @keyframes spin-once {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
@@ -274,7 +267,10 @@ def _build_miniapp_html() -> str:
                     <span class="text-lg">🍃</span>
                     <span class="text-xs uppercase tracking-wider font-bold text-white/80" id="tAqiTitle">Havo Sifati (AQI)</span>
                 </div>
-                <span id="aqiUpdatedTime" class="text-xs font-mono text-white/60">--:--</span>
+                <div class="flex items-center gap-1.5 text-xs text-white/70">
+                    <span id="lblUpdatedAt">Yangilangan:</span>
+                    <span id="aqiUpdatedTime" class="font-mono text-white/90">--:--</span>
+                </div>
             </div>
 
             <!-- Gauge and Big AQI Number -->
@@ -331,7 +327,6 @@ def _build_miniapp_html() -> str:
             </div>
             <!-- Horizontal Carousel -->
             <div id="hourlyContainer" class="flex items-center gap-3 overflow-x-auto hide-scrollbar pt-2 pb-1 scroll-smooth">
-                <!-- Skeleton loader -->
                 <div class="flex gap-3">
                     <div class="w-16 h-24 bg-white/10 rounded-2xl animate-pulse"></div>
                     <div class="w-16 h-24 bg-white/10 rounded-2xl animate-pulse"></div>
@@ -348,7 +343,6 @@ def _build_miniapp_html() -> str:
                 <span id="tWeeklyTitle">7 Kunlik Prognoz</span>
             </div>
             <div id="weeklyContainer" class="flex flex-col divide-y divide-white/10">
-                <!-- Skeleton -->
                 <div class="py-2.5 flex justify-between animate-pulse"><div class="w-16 h-4 bg-white/10 rounded"></div><div class="w-32 h-4 bg-white/10 rounded"></div></div>
                 <div class="py-2.5 flex justify-between animate-pulse"><div class="w-16 h-4 bg-white/10 rounded"></div><div class="w-32 h-4 bg-white/10 rounded"></div></div>
                 <div class="py-2.5 flex justify-between animate-pulse"><div class="w-16 h-4 bg-white/10 rounded"></div><div class="w-32 h-4 bg-white/10 rounded"></div></div>
@@ -367,7 +361,7 @@ def _build_miniapp_html() -> str:
                     <div id="valWindDir" class="text-xs text-white/80 mt-1 truncate">Shimoliy</div>
                 </div>
                 <div class="text-[11px] text-white/60 flex items-center justify-between">
-                    <span>Kompas:</span>
+                    <span id="lblCompass">Kompas:</span>
                     <span id="valWindCompass" class="font-mono text-white/90">--°</span>
                 </div>
             </div>
@@ -405,11 +399,11 @@ def _build_miniapp_html() -> str:
                 </div>
                 <div class="flex justify-between items-center text-xs">
                     <div>
-                        <div class="text-white/60 text-[10px]">Chiqishi</div>
+                        <div class="text-white/60 text-[10px]" id="lblSunrise">Chiqishi</div>
                         <div id="valSunrise" class="font-bold text-white mt-0.5">--:--</div>
                     </div>
                     <div class="text-right">
-                        <div class="text-white/60 text-[10px]">Botishi</div>
+                        <div class="text-white/60 text-[10px]" id="lblSunset">Botishi</div>
                         <div id="valSunset" class="font-bold text-white mt-0.5">--:--</div>
                     </div>
                 </div>
@@ -428,19 +422,19 @@ def _build_miniapp_html() -> str:
                     <div class="text-2xl font-bold font-sans"><span id="valPressureMmhg">--</span> <span class="text-xs font-normal text-white/70">mmHg</span></div>
                     <div id="valPressureHpa" class="text-xs text-white/80 mt-1">-- hPa</div>
                 </div>
-                <div class="text-[11px] text-white/60">Normal atmosfera</div>
+                <div class="text-[11px] text-white/60" id="lblPressureDesc">Normal atmosfera</div>
             </div>
 
             <!-- App Info / Telegram Bot -->
             <div class="glass-card p-4 flex flex-col justify-between h-36">
                 <div class="flex items-center gap-1.5 text-xs font-semibold text-white/70 uppercase">
-                    <span>📱</span> <span>Havo Bot</span>
+                    <span>📱</span> <span id="botTitle">Havo Bot</span>
                 </div>
                 <div>
-                    <div class="text-sm font-bold">Toshkent & Viloyatlar</div>
-                    <div class="text-[11px] text-white/70 mt-1">Real vaqt monitoringi</div>
+                    <div class="text-sm font-bold" id="botSubtitle">Toshkent & Viloyatlar</div>
+                    <div class="text-[11px] text-white/70 mt-1" id="botDesc">Real vaqt monitoringi</div>
                 </div>
-                <button onclick="closeMiniApp()" class="w-full py-1.5 rounded-xl bg-white/20 active:scale-95 transition text-xs font-bold text-center">
+                <button onclick="closeMiniApp()" id="btnClose" class="w-full py-1.5 rounded-xl bg-white/20 active:scale-95 transition text-xs font-bold text-center">
                     Yopish ✕
                 </button>
             </div>
@@ -467,8 +461,8 @@ def _build_miniapp_html() -> str:
 
             <!-- Tabs: Toshkent / Viloyatlar -->
             <div class="flex gap-2 pt-1 pb-3 text-xs font-bold">
-                <button onclick="switchDistrictTab('city')" id="tabCityBtn" class="flex-1 py-1.5 rounded-lg bg-sky-600 text-white transition">Toshkent tumanlari (12)</button>
-                <button onclick="switchDistrictTab('regions')" id="tabRegionBtn" class="flex-1 py-1.5 rounded-lg bg-white/10 text-white/70 transition">Viloyatlar (13)</button>
+                <button onclick="switchDistrictTab('city')" id="tabCityBtn" class="flex-1 py-1.5 rounded-lg bg-sky-600 text-white transition">Toshkent tumanlari</button>
+                <button onclick="switchDistrictTab('regions')" id="tabRegionBtn" class="flex-1 py-1.5 rounded-lg bg-white/10 text-white/70 transition">Viloyatlar</button>
             </div>
 
             <!-- Districts List -->
@@ -493,15 +487,27 @@ def _build_miniapp_html() -> str:
         let allDistricts = { city: [], regions: [], other: [] };
         let currentTab = 'city';
 
-        // Auto detect language from Telegram
-        const userTgLang = tg?.initDataUnsafe?.user?.language_code;
-        if (userTgLang) {
-            if (userTgLang.startsWith('ru')) currentLang = 'ru';
-            else if (userTgLang.startsWith('en')) currentLang = 'en';
-            else currentLang = 'uz';
+        // Auto detect language from URL params or Telegram
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlLang = urlParams.get('lang');
+        const urlDistId = urlParams.get('district_id');
+
+        if (urlDistId && !isNaN(parseInt(urlDistId))) {
+            currentDistrictId = parseInt(urlDistId);
         }
 
-        // Translations Dictionary for UI Strings
+        if (urlLang && ['uz', 'ru', 'en'].includes(urlLang)) {
+            currentLang = urlLang;
+        } else {
+            const userTgLang = tg?.initDataUnsafe?.user?.language_code;
+            if (userTgLang) {
+                if (userTgLang.startsWith('ru')) currentLang = 'ru';
+                else if (userTgLang.startsWith('en')) currentLang = 'en';
+                else currentLang = 'uz';
+            }
+        }
+
+        // Full UI Translation Dictionary
         const I18N = {
             uz: {
                 aqiTitle: "Havo Sifati (AQI)",
@@ -516,8 +522,29 @@ def _build_miniapp_html() -> str:
                 searchPlaceholder: "Qidirish (masalan: Chilonzor, Samarqand)...",
                 tabCity: "Toshkent tumanlari",
                 tabRegions: "Viloyatlar",
-                comfortHumid: "Qulay darajada",
+                max: "Maks",
+                min: "Min",
+                feelsLike: "Tuyulishi",
+                compass: "Kompas:",
+                sunrise: "Chiqishi",
+                sunset: "Botishi",
+                pressureNormal: "Normal atmosfera",
+                humidityComfortGood: "Qulay darajada",
+                humidityComfortDry: "Quruq havo",
+                humidityComfortHumid: "Yuqori namlik",
+                botTitle: "Havo Bot",
+                botSubtitle: "Toshkent & Viloyatlar",
+                botDesc: "Real vaqt monitoringi",
                 close: "Yopish ✕",
+                now: "Hozir",
+                today: "Bugun",
+                tomorrow: "Ertaga",
+                notFound: "Hudud topilmadi",
+                select: "Tanlash →",
+                updatedAt: "Yangilangan:",
+                epaBadge: "EPA standarti",
+                loading: "Yuklanmoqda...",
+                analyzingAir: "Havo ma'lumotlari tahlil qilinmoqda...",
             },
             ru: {
                 aqiTitle: "Качество Воздуха (AQI)",
@@ -532,8 +559,29 @@ def _build_miniapp_html() -> str:
                 searchPlaceholder: "Поиск (например: Чиланзар, Самарканд)...",
                 tabCity: "Районы Ташкента",
                 tabRegions: "Области",
-                comfortHumid: "Комфортная влажность",
+                max: "Макс",
+                min: "Мин",
+                feelsLike: "Ощущается",
+                compass: "Компас:",
+                sunrise: "Восход",
+                sunset: "Закат",
+                pressureNormal: "Нормальное давление",
+                humidityComfortGood: "Комфортная влажность",
+                humidityComfortDry: "Сухой воздух",
+                humidityComfortHumid: "Высокая влажность",
+                botTitle: "Бот мониторинга",
+                botSubtitle: "Ташкент и регионы",
+                botDesc: "Мониторинг в реальном времени",
                 close: "Закрыть ✕",
+                now: "Сейчас",
+                today: "Сегодня",
+                tomorrow: "Завтра",
+                notFound: "Район не найден",
+                select: "Выбрать →",
+                updatedAt: "Обновлено:",
+                epaBadge: "Стандарт EPA",
+                loading: "Загрузка...",
+                analyzingAir: "Анализ качества воздуха...",
             },
             en: {
                 aqiTitle: "Air Quality (AQI)",
@@ -548,8 +596,29 @@ def _build_miniapp_html() -> str:
                 searchPlaceholder: "Search (e.g. Chilanzar, Samarkand)...",
                 tabCity: "Tashkent Districts",
                 tabRegions: "Regions",
-                comfortHumid: "Comfortable",
+                max: "High",
+                min: "Low",
+                feelsLike: "Feels like",
+                compass: "Compass:",
+                sunrise: "Sunrise",
+                sunset: "Sunset",
+                pressureNormal: "Standard pressure",
+                humidityComfortGood: "Comfortable",
+                humidityComfortDry: "Dry air",
+                humidityComfortHumid: "High humidity",
+                botTitle: "Air Quality Bot",
+                botSubtitle: "Tashkent & Regions",
+                botDesc: "Real-time Monitoring",
                 close: "Close ✕",
+                now: "Now",
+                today: "Today",
+                tomorrow: "Tomorrow",
+                notFound: "District not found",
+                select: "Select →",
+                updatedAt: "Updated:",
+                epaBadge: "EPA standard",
+                loading: "Loading...",
+                analyzingAir: "Analyzing air quality...",
             }
         };
 
@@ -575,6 +644,36 @@ def _build_miniapp_html() -> str:
             document.getElementById('districtSearchInput').placeholder = t.searchPlaceholder;
             document.getElementById('tabCityBtn').textContent = `${t.tabCity} (${allDistricts.city?.length || 12})`;
             document.getElementById('tabRegionBtn').textContent = `${t.tabRegions} (${allDistricts.regions?.length || 13})`;
+
+            document.getElementById('lblUpdatedAt').textContent = t.updatedAt;
+            document.getElementById('lblCompass').textContent = t.compass;
+            document.getElementById('lblSunrise').textContent = t.sunrise;
+            document.getElementById('lblSunset').textContent = t.sunset;
+            document.getElementById('lblPressureDesc').textContent = t.pressureNormal;
+            document.getElementById('botTitle').textContent = t.botTitle;
+            document.getElementById('botSubtitle').textContent = t.botSubtitle;
+            document.getElementById('botDesc').textContent = t.botDesc;
+            document.getElementById('btnClose').textContent = t.close;
+            document.getElementById('badgePm25').textContent = t.epaBadge;
+            document.getElementById('badgePm10').textContent = t.epaBadge;
+
+            // Dynamic placeholders if not loaded yet
+            const weatherCondEl = document.getElementById('weatherCondition');
+            if (weatherCondEl && (weatherCondEl.textContent.includes('...') || ['Yuklanmoqda...', 'Загрузка...', 'Loading...'].includes(weatherCondEl.textContent))) {
+                weatherCondEl.textContent = t.loading;
+            }
+            const aqiAdviceEl = document.getElementById('aqiAdviceText');
+            if (aqiAdviceEl && (aqiAdviceEl.textContent.includes('...') || aqiAdviceEl.textContent.includes('tahlil') || aqiAdviceEl.textContent.includes('Анализ') || aqiAdviceEl.textContent.includes('Analyzing'))) {
+                aqiAdviceEl.textContent = t.analyzingAir;
+            }
+            const tempRangeEl = document.getElementById('tempRange');
+            if (tempRangeEl && tempRangeEl.textContent.includes('--')) {
+                tempRangeEl.textContent = `${t.max}: --° • ${t.min}: --°`;
+            }
+            const feelsLikeEl = document.getElementById('feelsLike');
+            if (feelsLikeEl && feelsLikeEl.textContent.includes('--')) {
+                feelsLikeEl.textContent = `${t.feelsLike}: --°`;
+            }
 
             // Active lang button highlight
             ['uz', 'ru', 'en'].forEach(l => {
@@ -630,6 +729,7 @@ def _build_miniapp_html() -> str:
 
         function renderUI(data) {
             const { district, air, weather, hourly, weekly } = data;
+            const t = I18N[currentLang] || I18N.uz;
 
             // 1. District
             document.getElementById('currentDistrictName').textContent = district.name;
@@ -638,8 +738,8 @@ def _build_miniapp_html() -> str:
             document.getElementById('weatherEmojiHero').textContent = weather.emoji || '☀️';
             document.getElementById('weatherTemp').innerHTML = `<span>${Math.round(weather.temp)}</span><span class="text-4xl font-normal mt-1 text-white/80">°</span>`;
             document.getElementById('weatherCondition').textContent = weather.condition;
-            document.getElementById('tempRange').textContent = `Maks: ${Math.round(weather.temp_max)}° • Min: ${Math.round(weather.temp_min)}°`;
-            document.getElementById('feelsLike').textContent = `Tuyulishi: ${Math.round(weather.feels_like)}°`;
+            document.getElementById('tempRange').textContent = `${t.max}: ${Math.round(weather.temp_max)}° • ${t.min}: ${Math.round(weather.temp_min)}°`;
+            document.getElementById('feelsLike').textContent = `${t.feelsLike}: ${Math.round(weather.feels_like)}°`;
 
             // Weather theme
             const nowH = new Date().getHours();
@@ -655,7 +755,7 @@ def _build_miniapp_html() -> str:
             badge.style.borderColor = `${air.color}50`;
 
             document.getElementById('aqiAdviceText').textContent = air.advice;
-            document.getElementById('aqiUpdatedTime').textContent = air.updated_at;
+            document.getElementById('aqiUpdatedTime').textContent = air.updated_at || '--:--';
             document.getElementById('aqiGaugeCenterEmoji').textContent = air.emoji;
 
             // AQI circular stroke (max 300 AQI for full circle, 251.2 dasharray)
@@ -674,7 +774,7 @@ def _build_miniapp_html() -> str:
             if (hourly && hourly.length > 0) {
                 hourlyEl.innerHTML = hourly.map(item => `
                     <div class="flex-shrink-0 w-16 py-3 px-2 rounded-2xl flex flex-col items-center justify-between text-center transition ${item.is_now ? 'bg-white/25 border border-white/30 shadow-md' : 'bg-white/5'}">
-                        <span class="text-[11px] font-semibold ${item.is_now ? 'text-white' : 'text-white/70'}">${item.is_now ? (currentLang === 'ru' ? 'Сейчас' : (currentLang === 'en' ? 'Now' : 'Hozir')) : item.time}</span>
+                        <span class="text-[11px] font-semibold ${item.is_now ? 'text-white' : 'text-white/70'}">${item.is_now ? t.now : item.time}</span>
                         <span class="text-2xl my-1.5 filter drop-shadow">${item.emoji}</span>
                         <span class="text-sm font-bold font-sans">${Math.round(item.temp)}°</span>
                         ${item.pop > 10 ? `<span class="text-[9px] font-bold text-sky-300 mt-1">💧${item.pop}%</span>` : ''}
@@ -682,25 +782,44 @@ def _build_miniapp_html() -> str:
                 `).join('');
             }
 
-            // 5. Weekly Forecast
+            // 5. Weekly Forecast (Dynamic for ANY temperature range including winter/subzero)
             const weeklyEl = document.getElementById('weeklyContainer');
             if (weekly && weekly.length > 0) {
-                // Find weekly min and max for proportional bars
                 const allMin = Math.min(...weekly.map(d => d.temp_min));
                 const allMax = Math.max(...weekly.map(d => d.temp_max));
                 const range = Math.max(1, allMax - allMin);
 
-                weeklyEl.innerHTML = weekly.map(day => {
-                    const leftPct = Math.round(((day.temp_min - allMin) / range) * 100);
-                    const widthPct = Math.max(12, Math.round(((day.temp_max - day.temp_min) / range) * 100));
+                weeklyEl.innerHTML = weekly.map((day, idx) => {
+                    let leftPct = Math.round(((day.temp_min - allMin) / range) * 100);
+                    let widthPct = Math.round(((day.temp_max - day.temp_min) / range) * 100);
+
+                    // Elegant minimum bar width (16%) so narrow ranges (e.g. 12°-13°) look clean and rounded
+                    widthPct = Math.max(16, widthPct);
+                    if (leftPct + widthPct > 100) {
+                        leftPct = Math.max(0, 100 - widthPct);
+                    }
+
+                    // Live current temp dot on "Today" row (Apple Weather signature feature)
+                    let dotHtml = '';
+                    if (idx === 0) {
+                        const cur = Math.round(weather.temp);
+                        const clamped = Math.min(day.temp_max, Math.max(day.temp_min, cur));
+                        const dotPct = day.temp_max === day.temp_min ? 50 : Math.round(((clamped - day.temp_min) / Math.max(0.1, day.temp_max - day.temp_min)) * 100);
+                        dotHtml = `<div class="absolute -top-1 w-3 h-3 bg-white rounded-full border-2 border-slate-900 shadow-sm z-10 pointer-events-none" style="left: calc(${dotPct}% - 6px);"></div>`;
+                    }
+
+                    const isToday = idx === 0;
+                    const dayLabel = isToday ? t.today : (idx === 1 ? t.tomorrow : day.day_name);
 
                     return `
                     <div class="py-2.5 flex items-center justify-between text-xs font-medium">
-                        <span class="w-16 font-semibold truncate ${day.day_name === 'Bugun' || day.day_name === 'Сегодня' || day.day_name === 'Today' ? 'text-sky-300 font-bold' : 'text-white'}">${day.day_name}</span>
+                        <span class="w-16 font-semibold truncate ${isToday ? 'text-sky-300 font-bold' : 'text-white'}">${dayLabel}</span>
                         <div class="w-8 text-center text-lg">${day.emoji}</div>
                         <span class="w-10 text-right font-mono text-white/70 font-bold">${Math.round(day.temp_min)}°</span>
-                        <div class="flex-1 mx-3 h-1.5 bg-white/10 rounded-full relative overflow-hidden">
-                            <div class="absolute h-full rounded-full bg-gradient-to-r from-sky-400 via-amber-300 to-orange-400" style="left: ${leftPct}%; width: ${widthPct}%;"></div>
+                        <div class="flex-1 mx-3 h-1.5 bg-white/10 rounded-full relative overflow-visible">
+                            <div class="absolute h-full rounded-full bg-gradient-to-r from-sky-400 via-amber-300 to-orange-400" style="left: ${leftPct}%; width: ${widthPct}%;">
+                                ${dotHtml}
+                            </div>
                         </div>
                         <span class="w-10 text-right font-mono text-white font-bold">${Math.round(day.temp_max)}°</span>
                     </div>
@@ -715,6 +834,11 @@ def _build_miniapp_html() -> str:
 
             document.getElementById('valHumidity').textContent = weather.humidity;
             document.getElementById('barHumidity').style.width = `${weather.humidity}%`;
+
+            let humidDesc = t.humidityComfortGood;
+            if (weather.humidity < 30) humidDesc = t.humidityComfortDry;
+            else if (weather.humidity > 65) humidDesc = t.humidityComfortHumid;
+            document.getElementById('valHumidityComfort').textContent = humidDesc;
 
             document.getElementById('valUv').textContent = weather.uv_index;
             document.getElementById('valUvDesc').textContent = weather.uv_category;
@@ -739,6 +863,7 @@ def _build_miniapp_html() -> str:
         }
 
         function renderDistrictsList() {
+            const t = I18N[currentLang] || I18N.uz;
             const list = allDistricts[currentTab] || [];
             const search = (document.getElementById('districtSearchInput')?.value || '').toLowerCase().trim();
             const container = document.getElementById('districtListScroll');
@@ -746,14 +871,14 @@ def _build_miniapp_html() -> str:
             const filtered = list.filter(d => d.name.toLowerCase().includes(search));
 
             if (filtered.length === 0) {
-                container.innerHTML = '<div class="text-center py-6 text-white/40 text-xs">Hudud topilmadi</div>';
+                container.innerHTML = `<div class="text-center py-6 text-white/40 text-xs">${t.notFound}</div>`;
                 return;
             }
 
             container.innerHTML = filtered.map(d => `
                 <button onclick="selectDistrict(${d.id})" class="w-full text-left p-3 rounded-xl flex items-center justify-between transition ${d.id === currentDistrictId ? 'bg-sky-600/40 border border-sky-400/50 font-bold' : 'bg-white/5 hover:bg-white/10 text-white/80'}">
                     <span>${d.name}</span>
-                    ${d.id === currentDistrictId ? '<span class="text-sky-300">✓</span>' : '<span class="text-white/30 text-xs">Tanlash →</span>'}
+                    ${d.id === currentDistrictId ? '<span class="text-sky-300">✓</span>' : `<span class="text-white/30 text-xs">${t.select}</span>`}
                 </button>
             `).join('');
         }
