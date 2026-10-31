@@ -25,3 +25,4 @@ class UserLocation(CreatedAtMixin, Base):
 
     def __repr__(self) -> str:  # pragma: no cover
         return f"<UserLocation user_id={self.user_id} district_id={self.district_id} is_home={self.is_home}>"
+

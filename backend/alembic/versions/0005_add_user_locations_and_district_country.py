@@ -42,3 +42,4 @@ def downgrade() -> None:
     op.drop_table("user_locations")
     op.drop_column("districts", "admin_area")
     op.drop_column("districts", "country")
+
