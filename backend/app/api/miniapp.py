@@ -1012,25 +1012,32 @@ def _build_miniapp_html() -> str:
             clearNight: (cls) => `
                 <svg viewBox="0 0 64 64" fill="none" class="${cls}">
                     <defs>
-                        <linearGradient id="cn_moon" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" stop-color="#FEF08A"/>
-                            <stop offset="50%" stop-color="#FCD34D"/>
-                            <stop offset="100%" stop-color="#F59E0B"/>
+                        <linearGradient id="cn_moon" x1="15%" y1="10%" x2="85%" y2="90%">
+                            <stop offset="0%" stop-color="#FEF9C3"/>
+                            <stop offset="35%" stop-color="#FDE047"/>
+                            <stop offset="70%" stop-color="#EAB308"/>
+                            <stop offset="100%" stop-color="#CA8A04"/>
                         </linearGradient>
-                        <radialGradient id="cn_glow" cx="45%" cy="45%" r="55%">
-                            <stop offset="0%" stop-color="#FDE047" stop-opacity="0.35"/>
-                            <stop offset="100%" stop-color="#FDE047" stop-opacity="0"/>
-                        </radialGradient>
+                        <linearGradient id="cn_crescent_bevel" x1="10%" y1="10%" x2="90%" y2="90%">
+                            <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.95"/>
+                            <stop offset="50%" stop-color="#FEF08A" stop-opacity="0.4"/>
+                            <stop offset="100%" stop-color="#CA8A04" stop-opacity="0"/>
+                        </linearGradient>
                     </defs>
-                    <circle cx="32" cy="32" r="26" fill="url(#cn_glow)"/>
-                    <path d="M16 16 L17.5 20 L21.5 21.5 L17.5 23 L16 27 L14.5 23 L10.5 21.5 L14.5 20 Z" fill="#FDE047" opacity="0.85"/>
-                    <circle cx="48" cy="18" r="1.5" fill="#FEF08A" opacity="0.9"/>
-                    <circle cx="18" cy="46" r="1.5" fill="#FEF08A" opacity="0.7"/>
-                    <path d="M38 12 C24 13 14 24 14 38 C14 49 22 57 33 58 C25 53 23 41 27 30 C30 22 36 16 45 14 C42.5 12.8 40.3 12.2 38 12 Z" 
+                    <!-- Elegant Sparkling Stars -->
+                    <g fill="#FEF08A">
+                        <path d="M15 16 L16.5 19.5 L20 21 L16.5 22.5 L15 26 L13.5 22.5 L10 21 L13.5 19.5 Z" opacity="0.95"/>
+                        <path d="M48 13 L49.2 15.5 L52 16.5 L49.2 17.5 L48 20 L46.8 17.5 L44 16.5 L46.8 15.5 Z" opacity="0.8"/>
+                        <circle cx="16" cy="45" r="1.5" opacity="0.75"/>
+                        <circle cx="51" cy="36" r="1.3" opacity="0.7"/>
+                        <circle cx="22" cy="54" r="1" opacity="0.6"/>
+                    </g>
+                    <!-- Volumetric 3D Crescent Moon Body -->
+                    <path d="M40 10 C24 11 13 24 13 40 C13 51.5 21 59 31 60 C22.5 54 20.5 41 25.5 29 C29.5 20 36 14 45 11 C43.3 10.3 41.7 10 40 10 Z" 
                           fill="url(#cn_moon)"/>
-                    <circle cx="25" cy="36" r="2" fill="#D97706" opacity="0.25"/>
-                    <circle cx="28" cy="45" r="3" fill="#D97706" opacity="0.2"/>
-                    <circle cx="32" cy="26" r="1.8" fill="#D97706" opacity="0.2"/>
+                    <!-- 3D Bevel Rim Highlight -->
+                    <path d="M39 12 C25 13 15 25 15 40 C15 49.5 21 56 29 58" 
+                          stroke="url(#cn_crescent_bevel)" stroke-width="2.5" stroke-linecap="round" fill="none"/>
                 </svg>`,
 
             partlyCloudyDay: (cls) => `
@@ -1069,10 +1076,11 @@ def _build_miniapp_html() -> str:
             partlyCloudyNight: (cls) => `
                 <svg viewBox="0 0 64 64" fill="none" class="${cls}">
                     <defs>
-                        <linearGradient id="pcn_moon" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" stop-color="#FEF08A"/>
-                            <stop offset="50%" stop-color="#FCD34D"/>
-                            <stop offset="100%" stop-color="#F59E0B"/>
+                        <linearGradient id="pcn_moon" x1="15%" y1="10%" x2="85%" y2="90%">
+                            <stop offset="0%" stop-color="#FEF9C3"/>
+                            <stop offset="35%" stop-color="#FDE047"/>
+                            <stop offset="70%" stop-color="#EAB308"/>
+                            <stop offset="100%" stop-color="#CA8A04"/>
                         </linearGradient>
                         <linearGradient id="pcn_cloud" x1="0%" y1="0%" x2="0%" y2="100%">
                             <stop offset="0%" stop-color="#FFFFFF"/>
@@ -1084,13 +1092,13 @@ def _build_miniapp_html() -> str:
                             <stop offset="100%" stop-color="#0F172A" stop-opacity="0"/>
                         </linearGradient>
                     </defs>
-                    <path d="M43 14 C35 15 29 21 29 29 C29 34 31 38 35 41 C31 38 30 31 33 24 C35 19 39 15 45 14 Z" 
+                    <path d="M43 10 C34 11 27 18 27 27 C27 32 29 36 33 39 C29.5 35 28.5 28 32 21 C34.5 16 38.5 12 45 11 C44.3 10.6 43.6 10.2 43 10 Z" 
                           fill="url(#pcn_moon)"/>
                     <circle cx="50" cy="18" r="1.5" fill="#FEF08A" opacity="0.85"/>
                     <ellipse cx="34" cy="50" rx="19" ry="3" fill="url(#pcn_shadow)"/>
                     <path d="M22 49 C15 49 10 44 10 38 C10 32.5 14 28 19.5 27.5 C21.5 20 28 15 35.5 15 C43.5 15 50 20.5 51.5 28 C56 29 59 33 59 38 C59 44 54 49 48 49 Z" 
                           fill="url(#pcn_cloud)"/>
-                    <path d="M28 21 C32 18 39 18 43 22" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+                    <path d="M28 21 C32 18 39 18 43 22" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" opacity="0.75"/>
                 </svg>`,
 
             cloudy: (cls) => `
@@ -1988,10 +1996,18 @@ def _build_miniapp_html() -> str:
                     // Live current temp dot on "Today" row (Apple Weather signature feature)
                     let dotHtml = '';
                     if (idx === 0) {
-                        const cur = Math.round(weather.temp);
+                        const cur = Number(weather.temp);
                         const clamped = Math.min(day.temp_max, Math.max(day.temp_min, cur));
-                        const dotPct = day.temp_max === day.temp_min ? 50 : Math.round(((clamped - day.temp_min) / Math.max(0.1, day.temp_max - day.temp_min)) * 100);
-                        dotHtml = `<div class="absolute -top-1 w-3 h-3 bg-white rounded-full border-2 border-slate-900 shadow-sm z-10 pointer-events-none" style="left: calc(${dotPct}% - 6px);"></div>`;
+                        // Position across the full week range track
+                        const trackDotPct = range > 0 ? ((clamped - allMin) / range) * 100 : 50;
+                        const safePct = Math.max(1, Math.min(99, trackDotPct));
+
+                        dotHtml = `
+                        <div class="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-20 pointer-events-none flex items-center justify-center" style="left: ${safePct}%;">
+                            <div class="w-3.5 h-3.5 rounded-full bg-white/35 backdrop-blur-sm flex items-center justify-center ring-2 ring-white/50 shadow-[0_0_10px_rgba(255,255,255,0.9)]">
+                                <div class="w-2 h-2 rounded-full bg-white"></div>
+                            </div>
+                        </div>`;
                     }
 
                     const isToday = idx === 0;
@@ -2006,9 +2022,8 @@ def _build_miniapp_html() -> str:
                         </div>
                         <span class="w-10 text-right font-mono text-white/70 font-bold">${Math.round(day.temp_min)}°</span>
                         <div class="flex-1 mx-3 h-1.5 bg-white/10 rounded-full relative overflow-visible">
-                            <div class="absolute h-full rounded-full bg-gradient-to-r from-sky-400 via-amber-300 to-orange-400" style="left: ${leftPct}%; width: ${widthPct}%;">
-                                ${dotHtml}
-                            </div>
+                            <div class="absolute h-full rounded-full bg-gradient-to-r from-sky-400 via-amber-300 to-orange-400" style="left: ${leftPct}%; width: ${widthPct}%;"></div>
+                            ${dotHtml}
                         </div>
                         <span class="w-10 text-right font-mono text-white font-bold">${Math.round(day.temp_max)}°</span>
                     </div>
