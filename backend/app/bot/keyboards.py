@@ -8,6 +8,7 @@ from aiogram.types import (
     InlineKeyboardMarkup,
     KeyboardButton,
     ReplyKeyboardMarkup,
+    WebAppInfo,
 )
 
 from app.core.i18n import t
@@ -114,10 +115,14 @@ def air_kb(
     *,
     switch_district: District | None = None,
     is_home: bool = False,
+    web_app_url: str | None = None,
 ) -> InlineKeyboardMarkup:
     rows: list[list[InlineKeyboardButton]] = [
         [_btn(t(lang, "btn_today_weather"), f"weather:today:{district_id}")],
     ]
+    if web_app_url:
+        label = "📱 Mini App (Interaktiv)" if lang == "uz" else ("📱 Mini App (Интерактив)" if lang == "ru" else "📱 Mini App (Interactive)")
+        rows.append([InlineKeyboardButton(text=label, web_app=WebAppInfo(url=f"{web_app_url}?district_id={district_id}&lang={lang}"))])
     if switch_district is not None:
         switch_label = (
             t(lang, "btn_switch_to_other", name=switch_district.name(lang))
@@ -147,14 +152,20 @@ def today_weather_kb(
     *,
     switch_district: District | None = None,
     is_home: bool = False,
+    web_app_url: str | None = None,
 ) -> InlineKeyboardMarkup:
     rows: list[list[InlineKeyboardButton]] = [
         [_btn(t(lang, "btn_weekly_weather"), f"weather:week:{district_id}")],
+    ]
+    if web_app_url:
+        label = "📱 Mini App (Interaktiv)" if lang == "uz" else ("📱 Mini App (Интерактив)" if lang == "ru" else "📱 Mini App (Interactive)")
+        rows.append([InlineKeyboardButton(text=label, web_app=WebAppInfo(url=f"{web_app_url}?district_id={district_id}&lang={lang}"))])
+    rows.append(
         [
             _btn(t(lang, "btn_back_to_air"), f"air:refresh:{district_id}"),
             _btn(t(lang, "btn_refresh"), f"weather:today:{district_id}"),
-        ],
-    ]
+        ]
+    )
     if switch_district is not None:
         switch_label = (
             t(lang, "btn_switch_to_other", name=switch_district.name(lang))
@@ -178,14 +189,20 @@ def weekly_weather_kb(
     *,
     switch_district: District | None = None,
     is_home: bool = False,
+    web_app_url: str | None = None,
 ) -> InlineKeyboardMarkup:
     rows: list[list[InlineKeyboardButton]] = [
         [_btn(t(lang, "btn_back_to_today"), f"weather:today:{district_id}")],
+    ]
+    if web_app_url:
+        label = "📱 Mini App (Interaktiv)" if lang == "uz" else ("📱 Mini App (Интерактив)" if lang == "ru" else "📱 Mini App (Interactive)")
+        rows.append([InlineKeyboardButton(text=label, web_app=WebAppInfo(url=f"{web_app_url}?district_id={district_id}&lang={lang}"))])
+    rows.append(
         [
             _btn(t(lang, "btn_back_to_air"), f"air:refresh:{district_id}"),
             _btn(t(lang, "btn_refresh"), f"weather:week:{district_id}"),
-        ],
-    ]
+        ]
+    )
     if switch_district is not None:
         switch_label = (
             t(lang, "btn_switch_to_other", name=switch_district.name(lang))

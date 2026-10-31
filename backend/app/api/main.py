@@ -21,6 +21,7 @@ from redis.asyncio import Redis
 from sqlalchemy import text
 
 from app.api.admin import admin_router
+from app.api.miniapp import miniapp_router
 from app.bot.factory import create_bot, create_dispatcher
 from app.config import get_settings
 from app.core.memory_cache import get_memory_cache
@@ -86,6 +87,19 @@ async def lifespan(app: FastAPI):
             )
             polling_task.add_done_callback(_log_polling_result)
             log.info("Bot polling rejimida ishga tushdi")
+
+        if settings.miniapp_url:
+            from aiogram.types import MenuButtonWebApp, WebAppInfo
+            try:
+                await bot.set_chat_menu_button(
+                    menu_button=MenuButtonWebApp(
+                        text="📱 Mini App",
+                        web_app=WebAppInfo(url=settings.miniapp_url),
+                    )
+                )
+                log.info("Telegram Mini App menyu tugmasi o'rnatildi: %s", settings.miniapp_url)
+            except Exception as exc:
+                log.warning("Menu button o'rnatilmadi: %r", exc)
     else:
         log.warning("BOT_TOKEN bo'sh: bot ishga tushmadi, faqat API ishlaydi")
 
@@ -113,6 +127,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Havo monitoringi API", version="0.1.0", lifespan=lifespan)
 app.include_router(admin_router)
+app.include_router(miniapp_router)
 
 
 @app.get("/")

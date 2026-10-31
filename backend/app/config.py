@@ -62,6 +62,12 @@ class Settings(BaseSettings):
     def webhook_url(self) -> str:
         return f"{self.webhook_base_url.rstrip('/')}/telegram/webhook"
 
+    @property
+    def miniapp_url(self) -> str:
+        if self.webhook_base_url:
+            return f"{self.webhook_base_url.rstrip('/')}/app"
+        return ""
+
 
 @lru_cache
 def get_settings() -> Settings:

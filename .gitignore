@@ -5,6 +5,8 @@ __pycache__/
 .ruff_cache/
 .venv/
 *.db
+*.db-wal
+*.db-shm
 node_modules/
 dist/
 media/

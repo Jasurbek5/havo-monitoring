@@ -180,7 +180,11 @@ async def show_air(
     await message.answer(
         text,
         reply_markup=air_kb(
-            lang, district.id, switch_district=switch_district, is_home=is_home
+            lang,
+            district.id,
+            switch_district=switch_district,
+            is_home=is_home,
+            web_app_url=settings.miniapp_url or None,
         ),
     )
 
@@ -206,7 +210,11 @@ async def show_today_weather(
     await message.answer(
         text,
         reply_markup=today_weather_kb(
-            lang, district.id, switch_district=switch_district, is_home=is_home
+            lang,
+            district.id,
+            switch_district=switch_district,
+            is_home=is_home,
+            web_app_url=settings.miniapp_url or None,
         ),
     )
 
@@ -238,7 +246,11 @@ async def refresh_air(
         await call.message.edit_text(
             text,
             reply_markup=air_kb(
-                lang, district.id, switch_district=switch_district, is_home=is_home
+                lang,
+                district.id,
+                switch_district=switch_district,
+                is_home=is_home,
+                web_app_url=settings.miniapp_url or None,
             ),
         )
     except TelegramBadRequest as exc:
@@ -269,7 +281,11 @@ async def switch_air_district(
         await call.message.edit_text(
             text,
             reply_markup=air_kb(
-                lang, district.id, switch_district=switch_district, is_home=is_home
+                lang,
+                district.id,
+                switch_district=switch_district,
+                is_home=is_home,
+                web_app_url=settings.miniapp_url or None,
             ),
         )
     except TelegramBadRequest as exc:
@@ -299,7 +315,11 @@ async def view_today_weather(
         await call.message.edit_text(
             text,
             reply_markup=today_weather_kb(
-                lang, district.id, switch_district=switch_district, is_home=is_home
+                lang,
+                district.id,
+                switch_district=switch_district,
+                is_home=is_home,
+                web_app_url=settings.miniapp_url or None,
             ),
         )
     except TelegramBadRequest as exc:
@@ -329,7 +349,11 @@ async def view_weekly_weather(
         await call.message.edit_text(
             text,
             reply_markup=weekly_weather_kb(
-                lang, district.id, switch_district=switch_district, is_home=is_home
+                lang,
+                district.id,
+                switch_district=switch_district,
+                is_home=is_home,
+                web_app_url=settings.miniapp_url or None,
             ),
         )
     except TelegramBadRequest as exc:
@@ -368,7 +392,11 @@ async def view_district(
     await call.message.edit_text(
         text,
         reply_markup=air_kb(
-            lang, district.id, switch_district=switch_district, is_home=is_home
+            lang,
+            district.id,
+            switch_district=switch_district,
+            is_home=is_home,
+            web_app_url=settings.miniapp_url or None,
         ),
     )
     await call.answer()
