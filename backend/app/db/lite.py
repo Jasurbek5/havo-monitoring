@@ -19,6 +19,10 @@ async def init_lite_db(engine: AsyncEngine, factory: async_sessionmaker[AsyncSes
             cols = {row[1] for row in cols_result.fetchall()}
             if cols and "name_en" not in cols:
                 await conn.execute(text("ALTER TABLE districts ADD COLUMN name_en VARCHAR(100)"))
+            if cols and "country" not in cols:
+                await conn.execute(text("ALTER TABLE districts ADD COLUMN country VARCHAR(100)"))
+            if cols and "admin_area" not in cols:
+                await conn.execute(text("ALTER TABLE districts ADD COLUMN admin_area VARCHAR(100)"))
 
             user_cols_result = await conn.execute(text("PRAGMA table_info(users)"))
             user_cols = {row[1] for row in user_cols_result.fetchall()}
@@ -34,5 +38,27 @@ async def init_lite_db(engine: AsyncEngine, factory: async_sessionmaker[AsyncSes
                 await conn.execute(
                     text("ALTER TABLE users ADD COLUMN timezone VARCHAR(32) DEFAULT 'auto'")
                 )
+        else:
+            # PostgreSQL (Neon) ustunlarni xavfsiz qo'shish
+            await conn.execute(text("ALTER TABLE districts ADD COLUMN IF NOT EXISTS name_en VARCHAR(100)"))
+            await conn.execute(text("ALTER TABLE districts ADD COLUMN IF NOT EXISTS country VARCHAR(100)"))
+            await conn.execute(text("ALTER TABLE districts ADD COLUMN IF NOT EXISTS admin_area VARCHAR(100)"))
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS home_district_id INTEGER REFERENCES districts(id)"))
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS digest_time VARCHAR(5) DEFAULT '07:00'"))
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS timezone VARCHAR(32) DEFAULT 'auto'"))
+
     async with factory() as session:
         await seed_districts(session)
+        # Eski avtomat Chilonzor biriktirilgan va birorta ham alohida saqlangan joyi bo'lmagan
+        # foydalanuvchilarning joylashuvini tozalaymiz (NULL qilamiz), shunda birinchi kirganda qidiruv chiqadi
+        chilonzor = await session.scalar(text("SELECT id FROM districts WHERE slug = 'chilonzor' LIMIT 1"))
+        if chilonzor:
+            await session.execute(
+                text(
+                    "UPDATE users SET district_id = NULL, home_district_id = NULL "
+                    "WHERE district_id = :cid AND home_district_id = :cid "
+                    "AND id NOT IN (SELECT DISTINCT user_id FROM user_locations)"
+                ),
+                {"cid": chilonzor},
+            )
+            await session.commit()

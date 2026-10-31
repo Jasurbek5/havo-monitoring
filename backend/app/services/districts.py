@@ -2,7 +2,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.geo import nearest
-from app.models import District, DistrictKind
+from app.models import District, DistrictKind, UserLocation
 from app.services.geocoding import LocationResult
 
 
@@ -58,6 +58,8 @@ async def get_or_create_district_by_location(
         name_uz=name_uz,
         name_ru=name_ru,
         name_en=name_en,
+        country=loc.country,
+        admin_area=loc.admin_area,
         lat=loc.lat,
         lon=loc.lon,
         kind=DistrictKind.REGION,
@@ -67,3 +69,75 @@ async def get_or_create_district_by_location(
     await session.commit()
     await session.refresh(district)
     return district
+
+
+async def list_user_saved_locations(
+    session: AsyncSession, user_id: int
+) -> list[UserLocation]:
+    stmt = (
+        select(UserLocation)
+        .where(UserLocation.user_id == user_id)
+        .order_by(UserLocation.order.asc(), UserLocation.id.asc())
+    )
+    return list((await session.scalars(stmt)).all())
+
+
+async def save_user_location(
+    session: AsyncSession,
+    user_id: int,
+    district_id: int,
+    *,
+    is_home: bool = False,
+    custom_name: str | None = None,
+) -> UserLocation:
+    """Foydalanuvchi uchun joylashuvni saqlaydi yoki yangilaydi."""
+    existing = await session.scalar(
+        select(UserLocation).where(
+            UserLocation.user_id == user_id,
+            UserLocation.district_id == district_id,
+        )
+    )
+    saved = await list_user_saved_locations(session, user_id)
+    if is_home:
+        for s in saved:
+            s.is_home = (s.district_id == district_id)
+
+    if existing is not None:
+        if is_home:
+            existing.is_home = True
+        if custom_name is not None:
+            existing.custom_name = custom_name
+        await session.commit()
+        await session.refresh(existing)
+        return existing
+
+    loc_record = UserLocation(
+        user_id=user_id,
+        district_id=district_id,
+        is_home=is_home,
+        custom_name=custom_name,
+        order=len(saved),
+    )
+    session.add(loc_record)
+    await session.commit()
+    await session.refresh(loc_record)
+    return loc_record
+
+
+async def remove_user_location(
+    session: AsyncSession,
+    user_id: int,
+    district_id: int,
+) -> bool:
+    """Foydalanuvchining saqlangan joyini o'chiradi."""
+    loc = await session.scalar(
+        select(UserLocation).where(
+            UserLocation.user_id == user_id,
+            UserLocation.district_id == district_id,
+        )
+    )
+    if loc is None:
+        return False
+    await session.delete(loc)
+    await session.commit()
+    return True

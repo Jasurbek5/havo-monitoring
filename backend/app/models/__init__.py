@@ -6,6 +6,7 @@ from app.models.base import Base
 from app.models.complaint import Complaint, ComplaintCategory, ComplaintStatus
 from app.models.district import District, DistrictKind
 from app.models.user import User
+from app.models.user_location import UserLocation
 
 __all__ = [
     "AdminUser",
@@ -17,4 +18,5 @@ __all__ = [
     "District",
     "DistrictKind",
     "User",
+    "UserLocation",
 ]

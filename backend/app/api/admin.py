@@ -2,6 +2,7 @@
 
 import html
 import secrets
+from collections import Counter
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
@@ -9,6 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from app.config import get_settings
 from app.db.session import get_session_factory
@@ -58,16 +60,96 @@ def _lang_badge(lang: str) -> str:
     return f'<span class="badge" style="background: {color}20; color: {color}; border-color: {color}40;">{flag} {name}</span>'
 
 
+def _country_flag(country: str | None) -> str:
+    if not country:
+        return "📍"
+    c = country.lower().strip()
+    if any(k in c for k in ("uzbek", "o'zbek", "узбек")):
+        return "🇺🇿"
+    if any(k in c for k in ("korea", "коре", "seoul")):
+        return "🇰🇷"
+    if any(k in c for k in ("turk", "турц", "istanbul")):
+        return "🇹🇷"
+    if any(k in c for k in ("russia", "росси")):
+        return "🇷🇺"
+    if any(k in c for k in ("kazakh", "қазақ", "казах")):
+        return "🇰🇿"
+    if any(k in c for k in ("united states", "usa", "amerika", "сша")):
+        return "🇺🇸"
+    if any(k in c for k in ("emirates", "dubai", "baa", "uae", "оаэ")):
+        return "🇦🇪"
+    if any(k in c for k in ("japan", "yaponi", "япон")):
+        return "🇯🇵"
+    if any(k in c for k in ("united kingdom", "uk", "britan", "angli", "великобрита")):
+        return "🇬🇧"
+    if any(k in c for k in ("china", "xitoy", "китай")):
+        return "🇨🇳"
+    if any(k in c for k in ("germany", "nemis", "germani", "герман")):
+        return "🇩🇪"
+    return "🌐"
+
+
 def _render_admin_html(users: list[User], tz: ZoneInfo) -> str:
     total_users = len(users)
     active_users = sum(1 for u in users if u.is_active)
     alert_users = sum(1 for u in users if u.alert_enabled)
     digest_users = sum(1 for u in users if u.daily_digest)
+    with_loc_users = sum(1 for u in users if (u.district_id or u.home_district_id))
+
+    # Top Global Shaharlar
+    city_counter = Counter()
+    for u in users:
+        d = u.district or u.home_district
+        if d:
+            flag = _country_flag(d.country)
+            c_tag = f" ({d.country})" if d.country else ""
+            city_counter[f"{flag} {d.name_uz}{c_tag}"] += 1
+    top_cities = city_counter.most_common(5)
+    top_cities_html = " • ".join(
+        f'<span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border-color: rgba(56, 189, 248, 0.3); font-size: 0.8rem; margin: 2px;">{html.escape(c[0])}: <b>{c[1]}</b></span>'
+        for c in top_cities
+    ) if top_cities else '<span class="text-muted">Hozircha ma\'lumot yo\'q</span>'
 
     rows_html = []
     for idx, u in enumerate(users, 1):
-        cur_name = html.escape(u.district.name_uz if u.district else "—")
-        home_name = html.escape(u.home_district.name_uz if u.home_district else "—")
+        if u.district:
+            flag = _country_flag(u.district.country)
+            c_part = f", {u.district.country}" if u.district.country else ""
+            cur_display = f"{flag} {u.district.name_uz}{c_part}"
+            cur_html = f'<span class="district-tag">📍 {html.escape(cur_display)}</span>'
+        else:
+            cur_display = "tanlanmagan"
+            cur_html = '<span class="badge" style="background: rgba(148, 163, 184, 0.15); color: #94a3b8; border-color: rgba(148, 163, 184, 0.25);">Tanlanmagan</span>'
+
+        if u.home_district:
+            h_flag = _country_flag(u.home_district.country)
+            h_part = f", {u.home_district.country}" if u.home_district.country else ""
+            home_display = f"{h_flag} {u.home_district.name_uz}{h_part}"
+            home_html = f'<span class="district-tag home-tag">🏠 {html.escape(home_display)}</span>'
+        else:
+            home_display = "—"
+            home_html = '<span class="text-muted">—</span>'
+
+        saved_badges = []
+        saved_search_parts = []
+        for loc in (getattr(u, "saved_locations", []) or []):
+            d = loc.district
+            if not d:
+                continue
+            is_h = loc.is_home
+            prefix = "🏠 " if is_h else "📍 "
+            s_name = d.name_uz
+            saved_search_parts.append(s_name.lower())
+            if d.country:
+                saved_search_parts.append(d.country.lower())
+            tag_border = "border-color: rgba(251, 191, 36, 0.4); color: #fde047;" if is_h else ""
+            saved_badges.append(
+                f'<span class="district-tag" style="font-size: 0.725rem; padding: 2px 7px; border-radius: 6px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); {tag_border}">'
+                f'{prefix}{html.escape(s_name)}'
+                f'</span>'
+            )
+        saved_html = f'<div style="display: flex; flex-wrap: wrap; gap: 4px; max-width: 240px;">{"".join(saved_badges)}</div>' if saved_badges else '<span class="text-muted">—</span>'
+
         status_badge = (
             '<span class="badge badge-success">🟢 Faol</span>'
             if u.is_active
@@ -87,22 +169,20 @@ def _render_admin_html(users: list[User], tz: ZoneInfo) -> str:
         tz_str = html.escape(u.timezone or "auto")
         created_str = _format_dt(u.created_at, tz)
         lang_html = _lang_badge(u.language)
+        search_blob = f"{u.telegram_id} {cur_display.lower()} {home_display.lower()} {' '.join(saved_search_parts)} {tz_str.lower()}"
 
         rows_html.append(f"""
         <tr data-status="{'active' if u.is_active else 'inactive'}"
             data-lang="{html.escape(u.language or 'uz')}"
-            data-search="{u.telegram_id} {cur_name.lower()} {home_name.lower()} {tz_str.lower()}">
+            data-search="{html.escape(search_blob)}">
             <td class="text-muted">{idx}</td>
             <td>
                 <span class="tg-id font-mono">{u.telegram_id}</span>
             </td>
             <td>{lang_html}</td>
-            <td>
-                {f'<span class="district-tag">📍 {cur_name}</span>' if u.district else '<span class="text-muted">—</span>'}
-            </td>
-            <td>
-                {f'<span class="district-tag home-tag">🏠 {home_name}</span>' if u.home_district else '<span class="text-muted">—</span>'}
-            </td>
+            <td>{cur_html}</td>
+            <td>{home_html}</td>
+            <td>{saved_html}</td>
             <td><code class="tz-code">{tz_str}</code></td>
             <td>
                 <div class="notifications-cell">
@@ -117,7 +197,7 @@ def _render_admin_html(users: list[User], tz: ZoneInfo) -> str:
 
     table_rows = "".join(rows_html) if rows_html else """
         <tr>
-            <td colspan="9" class="empty-state">
+            <td colspan="10" class="empty-state">
                 <div style="font-size: 2rem; margin-bottom: 0.5rem;">👥</div>
                 <p>Hozircha botda foydalanuvchilar yo'q</p>
             </td>
@@ -498,6 +578,18 @@ def _render_admin_html(users: list[User], tz: ZoneInfo) -> str:
                 <div class="stat-title">Ertalabki Xabarnoma <span>☀️</span></div>
                 <div class="stat-value" style="color: #38bdf8;">{digest_users}</div>
             </div>
+            <div class="stat-card" style="grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(56, 189, 248, 0.25);">
+                <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                    <span style="font-size: 1.35rem;">🌍</span>
+                    <div>
+                        <div style="font-size: 0.725rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Top Global Shaharlar</div>
+                        <div style="font-size: 0.9rem; font-weight: 600; color: #f8fafc; margin-top: 3px; display: flex; flex-wrap: wrap; gap: 4px;">{top_cities_html}</div>
+                    </div>
+                </div>
+                <div style="font-size: 0.8rem; color: #38bdf8; background: rgba(6, 182, 212, 0.15); border: 1px solid rgba(6, 182, 212, 0.3); padding: 4px 12px; border-radius: 9999px;">
+                    Joylashuv tanlaganlar: <b>{with_loc_users}</b> / {total_users}
+                </div>
+            </div>
         </div>
 
         <!-- Qidiruv va Filterlar -->
@@ -530,8 +622,9 @@ def _render_admin_html(users: list[User], tz: ZoneInfo) -> str:
                             <th style="width: 40px;">#</th>
                             <th>Telegram ID</th>
                             <th>Til</th>
-                            <th>Joriy Hudud</th>
-                            <th>Uy Hududi</th>
+                            <th>Joriy Shahar</th>
+                            <th>Uy Manzili</th>
+                            <th>Saqlangan Joylar</th>
                             <th>Vaqt Mintaqasi</th>
                             <th>Xabarnomalar</th>
                             <th>Holat</th>
@@ -591,7 +684,9 @@ async def admin_users_page(request: Request) -> HTMLResponse:
     async with get_session_factory()() as session:
         users = (
             await session.scalars(
-                select(User).order_by(User.id.desc())
+                select(User)
+                .options(selectinload(User.saved_locations))
+                .order_by(User.id.desc())
             )
         ).all()
 
@@ -606,7 +701,9 @@ async def admin_users_json(request: Request) -> JSONResponse:
     async with get_session_factory()() as session:
         users = (
             await session.scalars(
-                select(User).order_by(User.id.desc())
+                select(User)
+                .options(selectinload(User.saved_locations))
+                .order_by(User.id.desc())
             )
         ).all()
 
@@ -621,7 +718,18 @@ async def admin_users_json(request: Request) -> JSONResponse:
             "digest_time": u.digest_time,
             "timezone": u.timezone,
             "district": u.district.name_uz if u.district else None,
+            "district_country": u.district.country if u.district else None,
             "home_district": u.home_district.name_uz if u.home_district else None,
+            "home_district_country": u.home_district.country if u.home_district else None,
+            "saved_locations": [
+                {
+                    "district_id": loc.district_id,
+                    "name": loc.district.name_uz if loc.district else "",
+                    "country": loc.district.country if loc.district else "",
+                    "is_home": loc.is_home,
+                }
+                for loc in (getattr(u, "saved_locations", []) or [])
+            ],
             "created_at": _format_dt(u.created_at, settings.tz),
         }
         for u in users

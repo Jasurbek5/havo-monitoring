@@ -17,6 +17,7 @@ from app.bot.keyboards import (
 from app.bot.states import LocationSearchForm
 from app.core.i18n import all_translations, t
 from app.models import User
+from app.services.districts import save_user_location
 
 router = Router(name="settings")
 
@@ -114,10 +115,11 @@ async def home_menu(call: CallbackQuery, user: User, lang: str) -> None:
 
 
 @router.callback_query(F.data == "home:set_current")
-async def set_current_as_home(call: CallbackQuery, user: User, lang: str) -> None:
+async def set_current_as_home(call: CallbackQuery, session: AsyncSession, user: User, lang: str) -> None:
     """Hozirgi ko'rilayotgan hududni uy qilib belgilash."""
     if user.district:
         user.home_district_id = user.district_id
+        await save_user_location(session, user.id, user.district_id, is_home=True)
         await call.answer(t(lang, "home_district_set", name=user.district.name(lang)))
     else:
         await call.answer(t(lang, "need_district"), show_alert=True)

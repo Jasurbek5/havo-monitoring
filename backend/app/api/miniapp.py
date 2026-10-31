@@ -15,12 +15,15 @@ from app.config import Settings, get_settings
 from app.core.i18n import DEFAULT_LANG
 from app.core.memory_cache import get_memory_cache
 from app.db.session import get_session_factory
-from app.models import District, DistrictKind, User
+from app.models import District, DistrictKind, User, UserLocation
 from app.services.air_quality import build_provider
 from app.services.districts import (
     get_district,
     get_or_create_district_by_location,
     list_districts,
+    list_user_saved_locations,
+    remove_user_location,
+    save_user_location,
 )
 from app.services.geocoding import LocationResult, search_locations
 from app.services.miniapp import get_miniapp_full_data
@@ -142,6 +145,12 @@ async def select_location_district(
                 user.district_id = district.id
                 if body.set_as_home:
                     user.home_district_id = district.id
+                await save_user_location(
+                    session,
+                    user.id,
+                    district.id,
+                    is_home=body.set_as_home,
+                )
                 await session.commit()
                 await session.refresh(user)
 
@@ -231,8 +240,84 @@ async def get_miniapp_data(
         )
         data["has_selected_location"] = has_user_selected
 
+        saved_locs_data = []
+        if user:
+            saved_records = await list_user_saved_locations(session, user.id)
+            for rec in saved_records:
+                d = rec.district
+                saved_locs_data.append({
+                    "district_id": d.id,
+                    "id": d.id,
+                    "name": d.name(lang),
+                    "country": d.country or "",
+                    "is_home": rec.is_home,
+                    "lat": d.lat,
+                    "lon": d.lon,
+                    "slug": d.slug,
+                })
+        data["saved_locations"] = saved_locs_data
+
     await provider.aclose()
     return JSONResponse(data)
+
+
+class LocationSaveRequest(BaseModel):
+    telegram_id: int
+    district_id: int
+    is_home: bool = False
+    custom_name: str | None = None
+
+
+class LocationDeleteRequest(BaseModel):
+    telegram_id: int
+    district_id: int
+
+
+@miniapp_router.post("/api/miniapp/locations/save")
+async def save_location_api(body: LocationSaveRequest) -> JSONResponse:
+    async with get_session_factory()() as session:
+        user = await session.scalar(select(User).where(User.telegram_id == body.telegram_id))
+        if user is None:
+            user = User(telegram_id=body.telegram_id)
+            session.add(user)
+            await session.commit()
+            await session.refresh(user)
+
+        district = await get_district(session, body.district_id)
+        if district is None:
+            raise HTTPException(status_code=404, detail="Hudud topilmadi")
+
+        is_home = body.is_home or (user.home_district_id is None)
+        if is_home:
+            user.home_district_id = district.id
+        user.district_id = district.id
+
+        await save_user_location(
+            session,
+            user.id,
+            district.id,
+            is_home=is_home,
+            custom_name=body.custom_name,
+        )
+        await session.commit()
+        return JSONResponse({"ok": True, "saved_district_id": district.id, "is_home": is_home})
+
+
+@miniapp_router.post("/api/miniapp/locations/delete")
+async def delete_location_api(body: LocationDeleteRequest) -> JSONResponse:
+    async with get_session_factory()() as session:
+        user = await session.scalar(select(User).where(User.telegram_id == body.telegram_id))
+        if user is None:
+            raise HTTPException(status_code=404, detail="Foydalanuvchi topilmadi")
+
+        ok = await remove_user_location(session, user.id, body.district_id)
+        if user.home_district_id == body.district_id:
+            user.home_district_id = None
+        if user.district_id == body.district_id:
+            saved = await list_user_saved_locations(session, user.id)
+            user.district_id = saved[0].district_id if saved else user.home_district_id
+        await session.commit()
+        return JSONResponse({"ok": ok})
 
 
 class UserSettingsUpdate(BaseModel):
@@ -1838,11 +1923,21 @@ def _build_miniapp_html() -> str:
                 if (!currentDistrictId && data.district?.id) {
                     currentDistrictId = data.district.id;
                 }
+                if (Array.isArray(data.saved_locations) && data.saved_locations.length > 0) {
+                    const formatted = data.saved_locations.map(x => ({
+                        id: x.district_id,
+                        name: (x.name || '').split(',')[0].trim(),
+                        country: x.country || '',
+                        is_home: x.is_home
+                    }));
+                    try {
+                        localStorage.setItem('havo_saved_locations', JSON.stringify(formatted));
+                    } catch(e) {}
+                }
                 renderUI(data);
 
                 // Agar foydalanuvchi biror marta ham hudud tanlamagan bo'lsa:
-                const localChosen = localStorage.getItem('havo_current_district_id');
-                const hasSelected = localChosen || data.has_selected_location || userSettings.home_district_id;
+                const hasSelected = data.has_selected_location || userSettings.home_district_id;
                 if (!hasSelected) {
                     setTimeout(() => {
                         openDistrictModal();
@@ -2080,7 +2175,7 @@ def _build_miniapp_html() -> str:
             return [];
         }
 
-        function saveLocationToList(item) {
+        async function saveLocationToList(item) {
             if (!item || !item.id) return;
             const shortName = (item.short_name || item.name || '').split(',')[0].trim();
             if (!shortName) return;
@@ -2091,9 +2186,25 @@ def _build_miniapp_html() -> str:
             try {
                 localStorage.setItem('havo_saved_locations', JSON.stringify(list));
             } catch(e) {}
+
+            const tgUser = tg?.initDataUnsafe?.user;
+            const tgId = tgUser?.id;
+            if (tgId) {
+                try {
+                    await fetch('/api/miniapp/locations/save', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            telegram_id: tgId,
+                            district_id: Number(item.id),
+                            is_home: false
+                        })
+                    });
+                } catch(e) {}
+            }
         }
 
-        function removeLocationFromList(event, id) {
+        async function removeLocationFromList(event, id) {
             event.stopPropagation();
             haptic('light');
             let list = getSavedLocations();
@@ -2102,6 +2213,21 @@ def _build_miniapp_html() -> str:
                 localStorage.setItem('havo_saved_locations', JSON.stringify(list));
             } catch(e) {}
             renderLocationsDrawer();
+
+            const tgUser = tg?.initDataUnsafe?.user;
+            const tgId = tgUser?.id;
+            if (tgId) {
+                try {
+                    await fetch('/api/miniapp/locations/delete', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            telegram_id: tgId,
+                            district_id: Number(id)
+                        })
+                    });
+                } catch(e) {}
+            }
         }
 
         function updateCurrentDistrictIcon() {

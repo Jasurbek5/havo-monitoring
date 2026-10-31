@@ -22,6 +22,7 @@ from app.services.districts import (
     get_district,
     get_or_create_district_by_location,
     list_districts,
+    save_user_location,
 )
 from app.services.geocoding import (
     LocationResult,
@@ -167,6 +168,7 @@ async def pick_search_result(
     target_mode = data.get("target_mode")
     if target_mode == "set_home":
         user.home_district_id = district.id
+        await save_user_location(session, user.id, district.id, is_home=True)
         await state.clear()
         await safe_delete_message(call.message)
         await call.message.answer(
@@ -178,6 +180,7 @@ async def pick_search_result(
     user.district_id = district.id
     if is_first:
         user.home_district_id = district.id
+    await save_user_location(session, user.id, district.id, is_home=is_first)
 
     text = _district_feedback_text(user, district, lang, is_first)
     await state.clear()
@@ -210,6 +213,7 @@ async def on_location(
     user.district_id = district.id
     if is_first:
         user.home_district_id = district.id
+    await save_user_location(session, user.id, district.id, is_home=is_first)
 
     text = _district_feedback_text(user, district, lang, is_first)
     await message.answer(text, reply_markup=main_menu_kb(lang))

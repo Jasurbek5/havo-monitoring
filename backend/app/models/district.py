@@ -22,6 +22,8 @@ class District(CreatedAtMixin, Base):
     name_uz: Mapped[str] = mapped_column(String(100))
     name_ru: Mapped[str] = mapped_column(String(100))
     name_en: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    country: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    admin_area: Mapped[str | None] = mapped_column(String(100), nullable=True)
     kind: Mapped[DistrictKind] = mapped_column(
         str_enum(DistrictKind), default=DistrictKind.CITY_DISTRICT
     )

@@ -1,3 +1,4 @@
+from typing import TYPE_CHECKING
 from sqlalchemy import BigInteger, ForeignKey, String
 from sqlalchemy import false as sa_false
 from sqlalchemy import true as sa_true
@@ -5,6 +6,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, CreatedAtMixin
 from app.models.district import District
+
+if TYPE_CHECKING:
+    from app.models.user_location import UserLocation
 
 
 class User(CreatedAtMixin, Base):
@@ -16,7 +20,7 @@ class User(CreatedAtMixin, Base):
 
     # Joriy tanlangan yoki aniqlangan hudud (boshqa joyga borganda o'zgaradi).
     district_id: Mapped[int | None] = mapped_column(
-        ForeignKey("districts.id", ondelete="SET NULL"), index=True
+        ForeignKey("districts.id", ondelete="SET NULL"), index=True, nullable=True
     )
 
     # Asosiy uy hududi: foydalanuvchi safarda bo'lsa ham ertalabki xabar va ogohlantirishlar
@@ -45,4 +49,11 @@ class User(CreatedAtMixin, Base):
     )
     home_district: Mapped[District | None] = relationship(
         foreign_keys=[home_district_id], lazy="joined"
+    )
+    saved_locations: Mapped[list["UserLocation"]] = relationship(
+        "UserLocation",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+        order_by="UserLocation.order",
     )
