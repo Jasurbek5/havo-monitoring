@@ -758,7 +758,7 @@ def _build_miniapp_html() -> str:
                     </span>
                 </div>
                 <div>
-                    <div class="text-sm font-bold" id="botSubtitle">API va Ob-havo</div>
+                    <div class="text-sm font-bold" id="botSubtitle">AQI va Ob-havo</div>
                     <div class="text-[11px] text-white/70 mt-1" id="botDesc">Avtomatlashtirilgan monitoring tizimi</div>
                 </div>
                 <button onclick="closeMiniApp()" id="btnClose" class="w-full py-1.5 rounded-xl bg-white/20 active:scale-95 transition text-xs font-bold text-center">
@@ -1325,7 +1325,7 @@ def _build_miniapp_html() -> str:
                 humidityComfortDry: "Quruq havo",
                 humidityComfortHumid: "Yuqori namlik",
                 botTitle: "EkoRadar",
-                botSubtitle: "API va Ob-havo",
+                botSubtitle: "AQI va Ob-havo",
                 botDesc: "Avtomatlashtirilgan monitoring tizimi",
                 lblLiveStatus: "Jonli",
                 lblLoadingIndicator: "Yangilanmoqda...",
@@ -1388,7 +1388,7 @@ def _build_miniapp_html() -> str:
                 humidityComfortDry: "Сухой воздух",
                 humidityComfortHumid: "Высокая влажность",
                 botTitle: "EkoRadar",
-                botSubtitle: "API и Погода",
+                botSubtitle: "AQI и Погода",
                 botDesc: "Автоматизированный мониторинг",
                 lblLiveStatus: "В сети",
                 lblLoadingIndicator: "Обновление...",
@@ -1451,7 +1451,7 @@ def _build_miniapp_html() -> str:
                 humidityComfortDry: "Dry air",
                 humidityComfortHumid: "High humidity",
                 botTitle: "EkoRadar",
-                botSubtitle: "API & Weather",
+                botSubtitle: "AQI & Weather",
                 botDesc: "Automated monitoring system",
                 lblLiveStatus: "Live",
                 lblLoadingIndicator: "Updating...",
