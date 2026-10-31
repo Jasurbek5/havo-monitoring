@@ -472,7 +472,7 @@ def _build_miniapp_html() -> str:
 
         <!-- Hero Weather Section -->
         <section class="text-center pt-2 pb-1 flex flex-col items-center">
-            <div id="weatherIconHero" class="w-24 h-24 mb-1 filter drop-shadow-xl select-none transform hover:scale-105 transition-transform duration-300 flex items-center justify-center">
+            <div id="weatherIconHero" class="w-24 h-24 mb-1 select-none transform hover:scale-105 transition-transform duration-300 flex items-center justify-center">
                 <!-- Dynamically populated 3D Weather Icon -->
             </div>
             <h1 id="weatherTemp" class="text-7xl font-extrabold tracking-tight drop-shadow-sm font-sans flex items-start justify-center">
@@ -522,7 +522,7 @@ def _build_miniapp_html() -> str:
                         <circle id="aqiProgressCircle" cx="50" cy="50" r="40" stroke="#22c55e" stroke-width="9" fill="none" stroke-linecap="round" stroke-dasharray="251.2" stroke-dashoffset="251.2" class="transition-all duration-1000 ease-out"></circle>
                     </svg>
                     <div class="absolute inset-0 flex flex-col items-center justify-center">
-                        <div id="aqiGaugeCenterIcon" class="w-7 h-7 flex items-center justify-center filter drop-shadow">
+                        <div id="aqiGaugeCenterIcon" class="w-7 h-7 flex items-center justify-center">
                             <!-- Dynamically colored AQI icon -->
                         </div>
                         <span class="text-[9px] uppercase font-bold text-white/60 mt-0.5">AQI</span>
@@ -942,7 +942,7 @@ def _build_miniapp_html() -> str:
                             <stop offset="100%" stop-color="#D97706"/>
                         </radialGradient>
                         <radialGradient id="cd_corona" cx="50%" cy="50%" r="50%">
-                            <stop offset="50%" stop-color="#F59E0B" stop-opacity="0.35"/>
+                            <stop offset="45%" stop-color="#F59E0B" stop-opacity="0.35"/>
                             <stop offset="100%" stop-color="#F59E0B" stop-opacity="0"/>
                         </radialGradient>
                     </defs>
@@ -957,7 +957,7 @@ def _build_miniapp_html() -> str:
                         <line x1="15" y1="49" x2="11" y2="53"/>
                         <line x1="53" y1="11" x2="49" y2="15"/>
                     </g>
-                    <circle cx="32" cy="32" r="18" fill="url(#cd_sun)" filter="drop-shadow(0 4px 10px rgba(245,158,11,0.5))"/>
+                    <circle cx="32" cy="32" r="18" fill="url(#cd_sun)"/>
                     <path d="M23 21 A 12 12 0 0 1 38 20" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" opacity="0.65"/>
                 </svg>`,
 
@@ -979,7 +979,7 @@ def _build_miniapp_html() -> str:
                     <circle cx="48" cy="18" r="1.5" fill="#FEF08A" opacity="0.9"/>
                     <circle cx="18" cy="46" r="1.5" fill="#FEF08A" opacity="0.7"/>
                     <path d="M38 12 C24 13 14 24 14 38 C14 49 22 57 33 58 C25 53 23 41 27 30 C30 22 36 16 45 14 C42.5 12.8 40.3 12.2 38 12 Z" 
-                          fill="url(#cn_moon)" filter="drop-shadow(0 4px 12px rgba(253, 224, 71, 0.45))"/>
+                          fill="url(#cn_moon)"/>
                     <circle cx="25" cy="36" r="2" fill="#D97706" opacity="0.25"/>
                     <circle cx="28" cy="45" r="3" fill="#D97706" opacity="0.2"/>
                     <circle cx="32" cy="26" r="1.8" fill="#D97706" opacity="0.2"/>
@@ -999,18 +999,23 @@ def _build_miniapp_html() -> str:
                             <stop offset="65%" stop-color="#F1F5F9"/>
                             <stop offset="100%" stop-color="#CBD5E1"/>
                         </linearGradient>
+                        <linearGradient id="pcd_shadow" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stop-color="#0F172A" stop-opacity="0.22"/>
+                            <stop offset="100%" stop-color="#0F172A" stop-opacity="0"/>
+                        </linearGradient>
                     </defs>
-                    <circle cx="42" cy="24" r="13" fill="url(#pcd_sun)" filter="drop-shadow(0 2px 8px rgba(245,158,11,0.5))"/>
+                    <circle cx="42" cy="24" r="13" fill="url(#pcd_sun)"/>
                     <g stroke="#F59E0B" stroke-width="2.2" stroke-linecap="round" opacity="0.85">
                         <line x1="42" y1="7" x2="42" y2="4"/>
                         <line x1="57" y1="17" x2="60" y2="15"/>
                         <line x1="59" y1="30" x2="62" y2="31"/>
                         <line x1="54" y1="9" x2="56" y2="7"/>
                     </g>
-                    <path d="M22 50 C15 50 10 45 10 39 C10 33.5 14 29 19.5 28.5 C21.5 21 28 16 35.5 16 C43.5 16 50 21.5 51.5 29 C56 30 59 34 59 39 C59 45 54 50 48 50 Z" 
-                          fill="url(#pcd_cloud)" filter="drop-shadow(0 6px 14px rgba(15,23,42,0.28))"/>
-                    <path d="M28 22 C32 19 39 19 43 23" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" opacity="0.8"/>
-                    <path d="M14 36 C14 32 17 30 20 30" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" opacity="0.6"/>
+                    <ellipse cx="34" cy="50" rx="19" ry="3" fill="url(#pcd_shadow)"/>
+                    <path d="M22 49 C15 49 10 44 10 38 C10 32.5 14 28 19.5 27.5 C21.5 20 28 15 35.5 15 C43.5 15 50 20.5 51.5 28 C56 29 59 33 59 38 C59 44 54 49 48 49 Z" 
+                          fill="url(#pcd_cloud)"/>
+                    <path d="M28 21 C32 18 39 18 43 22" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" opacity="0.8"/>
+                    <path d="M14 35 C14 31 17 29 20 29" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" opacity="0.6"/>
                 </svg>`,
 
             partlyCloudyNight: (cls) => `
@@ -1026,13 +1031,18 @@ def _build_miniapp_html() -> str:
                             <stop offset="65%" stop-color="#E2E8F0"/>
                             <stop offset="100%" stop-color="#94A3B8"/>
                         </linearGradient>
+                        <linearGradient id="pcn_shadow" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stop-color="#0F172A" stop-opacity="0.25"/>
+                            <stop offset="100%" stop-color="#0F172A" stop-opacity="0"/>
+                        </linearGradient>
                     </defs>
                     <path d="M43 14 C35 15 29 21 29 29 C29 34 31 38 35 41 C31 38 30 31 33 24 C35 19 39 15 45 14 Z" 
-                          fill="url(#pcn_moon)" filter="drop-shadow(0 2px 8px rgba(253,224,71,0.4))"/>
+                          fill="url(#pcn_moon)"/>
                     <circle cx="50" cy="18" r="1.5" fill="#FEF08A" opacity="0.85"/>
-                    <path d="M22 50 C15 50 10 45 10 39 C10 33.5 14 29 19.5 28.5 C21.5 21 28 16 35.5 16 C43.5 16 50 21.5 51.5 29 C56 30 59 34 59 39 C59 45 54 50 48 50 Z" 
-                          fill="url(#pcn_cloud)" filter="drop-shadow(0 6px 14px rgba(15,23,42,0.35))"/>
-                    <path d="M28 22 C32 19 39 19 43 23" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+                    <ellipse cx="34" cy="50" rx="19" ry="3" fill="url(#pcn_shadow)"/>
+                    <path d="M22 49 C15 49 10 44 10 38 C10 32.5 14 28 19.5 27.5 C21.5 20 28 15 35.5 15 C43.5 15 50 20.5 51.5 28 C56 29 59 33 59 38 C59 44 54 49 48 49 Z" 
+                          fill="url(#pcn_cloud)"/>
+                    <path d="M28 21 C32 18 39 18 43 22" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
                 </svg>`,
 
             cloudy: (cls) => `
@@ -1047,12 +1057,17 @@ def _build_miniapp_html() -> str:
                             <stop offset="65%" stop-color="#F1F5F9"/>
                             <stop offset="100%" stop-color="#CBD5E1"/>
                         </linearGradient>
+                        <linearGradient id="c_shadow" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stop-color="#0F172A" stop-opacity="0.22"/>
+                            <stop offset="100%" stop-color="#0F172A" stop-opacity="0"/>
+                        </linearGradient>
                     </defs>
                     <path d="M30 40 C25 40 21 36 21 32 C21 27.5 24 24 28.5 23.5 C30 18 35 14 41 14 C47.5 14 53 18.5 54 24.5 C58 25.5 60 28.5 60 32.5 C60 37 56 40 51 40 Z" 
                           fill="url(#c_back)" opacity="0.9"/>
-                    <path d="M18 52 C12 52 8 47.5 8 42 C8 37 12 33 16.5 32.5 C18.5 25.5 24.5 21 31.5 21 C39 21 45 26 46.5 32.5 C50.5 33.5 53 37 53 41.5 C53 47 48.5 52 43 52 Z" 
-                          fill="url(#c_front)" filter="drop-shadow(0 6px 14px rgba(15,23,42,0.3))"/>
-                    <path d="M25 26 C28 24 34 24 38 27" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" opacity="0.75"/>
+                    <ellipse cx="32" cy="51" rx="21" ry="3.5" fill="url(#c_shadow)"/>
+                    <path d="M18 50 C12 50 8 45.5 8 40 C8 35 12 31 16.5 30.5 C18.5 23.5 24.5 19 31.5 19 C39 19 45 24 46.5 30.5 C50.5 31.5 53 35 53 39.5 C53 45 48.5 50 43 50 Z" 
+                          fill="url(#c_front)"/>
+                    <path d="M25 24 C28 22 34 22 38 25" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" opacity="0.75"/>
                 </svg>`,
 
             rainLight: (cls) => `
@@ -1067,10 +1082,15 @@ def _build_miniapp_html() -> str:
                             <stop offset="0%" stop-color="#38BDF8"/>
                             <stop offset="100%" stop-color="#0284C7"/>
                         </linearGradient>
+                        <linearGradient id="rl_shadow" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stop-color="#0F172A" stop-opacity="0.2"/>
+                            <stop offset="100%" stop-color="#0F172A" stop-opacity="0"/>
+                        </linearGradient>
                     </defs>
-                    <path d="M20 42 C14 42 10 38 10 33 C10 28.5 13.5 25 18 24.5 C20 18 26 14 32.5 14 C39.5 14 45 18.5 46.5 24.5 C50.5 25.5 53 28.5 53 33 C53 38 49 42 43.5 42 Z" 
-                          fill="url(#rl_cloud)" filter="drop-shadow(0 4px 10px rgba(15,23,42,0.25))"/>
-                    <path d="M26 19 C29 17 35 17 38 20" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" opacity="0.75"/>
+                    <ellipse cx="32" cy="42" rx="20" ry="3" fill="url(#rl_shadow)"/>
+                    <path d="M20 41 C14 41 10 37 10 32 C10 27.5 13.5 24 18 23.5 C20 17 26 13 32.5 13 C39.5 13 45 17.5 46.5 23.5 C50.5 24.5 53 27.5 53 32 C53 37 49 41 43.5 41 Z" 
+                          fill="url(#rl_cloud)"/>
+                    <path d="M26 18 C29 16 35 16 38 19" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" opacity="0.75"/>
                     <path d="M20 47 C20 45 22 43 22 43 C22 43 24 45 24 47 C24 48.5 23 50 22 50 C21 50 20 48.5 20 47 Z" fill="url(#rl_drop)"/>
                     <path d="M31 50 C31 48 33 46 33 46 C33 46 35 48 35 50 C35 51.5 34 53 33 53 C32 53 31 51.5 31 50 Z" fill="url(#rl_drop)"/>
                     <path d="M42 46 C42 44 44 42 44 42 C44 42 46 44 46 46 C46 47.5 45 49 44 49 C43 49 42 47.5 42 46 Z" fill="url(#rl_drop)"/>
@@ -1088,10 +1108,15 @@ def _build_miniapp_html() -> str:
                             <stop offset="0%" stop-color="#38BDF8"/>
                             <stop offset="100%" stop-color="#0284C7"/>
                         </linearGradient>
+                        <linearGradient id="rh_shadow" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stop-color="#0F172A" stop-opacity="0.25"/>
+                            <stop offset="100%" stop-color="#0F172A" stop-opacity="0"/>
+                        </linearGradient>
                     </defs>
-                    <path d="M20 38 C14 38 10 34 10 29 C10 24.5 13.5 21 18 20.5 C20 14 26 10 32.5 10 C39.5 10 45 14.5 46.5 20.5 C50.5 21.5 53 24.5 53 29 C53 34 49 38 43.5 38 Z" 
-                          fill="url(#rh_cloud)" filter="drop-shadow(0 5px 12px rgba(15,23,42,0.4))"/>
-                    <path d="M26 15 C29 13 35 13 38 16" stroke="#CBD5E1" stroke-width="1.8" stroke-linecap="round" opacity="0.6"/>
+                    <ellipse cx="32" cy="38" rx="20" ry="3" fill="url(#rh_shadow)"/>
+                    <path d="M20 37 C14 37 10 33 10 28 C10 23.5 13.5 20 18 19.5 C20 13 26 9 32.5 9 C39.5 9 45 13.5 46.5 19.5 C50.5 20.5 53 23.5 53 28 C53 33 49 37 43.5 37 Z" 
+                          fill="url(#rh_cloud)"/>
+                    <path d="M26 14 C29 12 35 12 38 15" stroke="#CBD5E1" stroke-width="1.8" stroke-linecap="round" opacity="0.6"/>
                     <g stroke="url(#rh_streak)" stroke-width="2.5" stroke-linecap="round">
                         <line x1="18" y1="44" x2="14" y2="54"/>
                         <line x1="26" y1="44" x2="22" y2="56"/>
@@ -1114,12 +1139,17 @@ def _build_miniapp_html() -> str:
                             <stop offset="50%" stop-color="#FACC15"/>
                             <stop offset="100%" stop-color="#EAB308"/>
                         </linearGradient>
+                        <linearGradient id="ts_shadow" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stop-color="#0F172A" stop-opacity="0.3"/>
+                            <stop offset="100%" stop-color="#0F172A" stop-opacity="0"/>
+                        </linearGradient>
                     </defs>
-                    <path d="M20 36 C14 36 10 32 10 27 C10 22.5 13.5 19 18 18.5 C20 12 26 8 32.5 8 C39.5 8 45 12.5 46.5 18.5 C50.5 19.5 53 22.5 53 27 C53 32 49 36 43.5 36 Z" 
-                          fill="url(#ts_cloud)" filter="drop-shadow(0 6px 14px rgba(15,23,42,0.5))"/>
-                    <path d="M26 13 C29 11 35 11 38 14" stroke="#94A3B8" stroke-width="1.8" stroke-linecap="round" opacity="0.6"/>
+                    <ellipse cx="32" cy="36" rx="20" ry="3" fill="url(#ts_shadow)"/>
+                    <path d="M20 35 C14 35 10 31 10 26 C10 21.5 13.5 18 18 17.5 C20 11 26 7 32.5 7 C39.5 7 45 11.5 46.5 17.5 C50.5 18.5 53 21.5 53 26 C53 31 49 35 43.5 35 Z" 
+                          fill="url(#ts_cloud)"/>
+                    <path d="M26 12 C29 10 35 10 38 13" stroke="#94A3B8" stroke-width="1.8" stroke-linecap="round" opacity="0.6"/>
                     <polygon points="34,25 23,39 30,39 26,56 41,36 33,36 38,25" 
-                             fill="url(#ts_bolt)" filter="drop-shadow(0 0 6px rgba(250,204,21,0.85))"/>
+                             fill="url(#ts_bolt)"/>
                     <line x1="15" y1="44" x2="12" y2="52" stroke="#38BDF8" stroke-width="2" stroke-linecap="round"/>
                     <line x1="48" y1="43" x2="45" y2="51" stroke="#38BDF8" stroke-width="2" stroke-linecap="round"/>
                 </svg>`,
@@ -1132,10 +1162,15 @@ def _build_miniapp_html() -> str:
                             <stop offset="65%" stop-color="#F1F5F9"/>
                             <stop offset="100%" stop-color="#CBD5E1"/>
                         </linearGradient>
+                        <linearGradient id="sn_shadow" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stop-color="#0F172A" stop-opacity="0.22"/>
+                            <stop offset="100%" stop-color="#0F172A" stop-opacity="0"/>
+                        </linearGradient>
                     </defs>
-                    <path d="M20 38 C14 38 10 34 10 29 C10 24.5 13.5 21 18 20.5 C20 14 26 10 32.5 10 C39.5 10 45 14.5 46.5 20.5 C50.5 21.5 53 24.5 53 29 C53 34 49 38 43.5 38 Z" 
-                          fill="url(#sn_cloud)" filter="drop-shadow(0 4px 12px rgba(15,23,42,0.25))"/>
-                    <path d="M26 15 C29 13 35 13 38 16" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" opacity="0.8"/>
+                    <ellipse cx="32" cy="38" rx="20" ry="3" fill="url(#sn_shadow)"/>
+                    <path d="M20 37 C14 37 10 33 10 28 C10 23.5 13.5 20 18 19.5 C20 13 26 9 32.5 9 C39.5 9 45 13.5 46.5 19.5 C50.5 20.5 53 23.5 53 28 C53 33 49 37 43.5 37 Z" 
+                          fill="url(#sn_cloud)"/>
+                    <path d="M26 14 C29 12 35 12 38 15" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" opacity="0.8"/>
                     <g stroke="#BAE6FD" stroke-width="2" stroke-linecap="round">
                         <g transform="translate(32, 48)">
                             <line x1="0" y1="-5" x2="0" y2="5"/>
@@ -1798,7 +1833,7 @@ def _build_miniapp_html() -> str:
                             <span class="text-[9px] ${badgeClass} uppercase tracking-tight truncate w-full">${dayBadge}</span>
                             <span class="text-[11px] font-bold ${item.is_now ? 'text-white' : 'text-white/85'} mt-0.5">${item.is_now ? t.now : item.time}</span>
                         </div>
-                        <div class="w-8 h-8 my-1 flex items-center justify-center filter drop-shadow">
+                        <div class="w-8 h-8 my-1 flex items-center justify-center">
                             ${hourlyIconSvg}
                         </div>
                         <span class="text-sm font-bold font-sans">${Math.round(item.temp)}°</span>
@@ -1841,7 +1876,7 @@ def _build_miniapp_html() -> str:
                     return `
                     <div class="py-2.5 flex items-center justify-between text-xs font-medium">
                         <span class="w-16 font-semibold truncate ${isToday ? 'text-sky-300 font-bold' : 'text-white'}">${dayLabel}</span>
-                        <div class="w-8 h-8 flex items-center justify-center filter drop-shadow-sm flex-shrink-0">
+                        <div class="w-8 h-8 flex items-center justify-center flex-shrink-0">
                             ${weeklyIconSvg}
                         </div>
                         <span class="w-10 text-right font-mono text-white/70 font-bold">${Math.round(day.temp_min)}°</span>
