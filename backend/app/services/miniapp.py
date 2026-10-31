@@ -99,6 +99,7 @@ async def fetch_hourly_forecast(
             pops = data.get("precipitation_probability", [])
 
             now_local = datetime.now(local_tz)
+            today_date = now_local.date()
             now_iso_prefix = now_local.strftime("%Y-%m-%dT%H")
 
             start_idx = 0
@@ -118,6 +119,7 @@ async def fetch_hourly_forecast(
                     "condition_key": cond_key,
                     "pop": int(pops[i]) if i < len(pops) and pops[i] is not None else 0,
                     "is_now": (i == start_idx),
+                    "is_tomorrow": dt.date() > today_date,
                 })
     except Exception as exc:
         log.warning("Open-Meteo hourly xatosi: %r", exc)
@@ -131,6 +133,8 @@ async def fetch_hourly_forecast(
                 timeout=4.0,
             )
             if resp.status_code == 200:
+                now_local = datetime.now(local_tz)
+                today_date = now_local.date()
                 items = resp.json().get("list", [])[:8]
                 for idx, it in enumerate(items):
                     dt = datetime.fromtimestamp(it["dt"], tz=local_tz)
@@ -144,6 +148,7 @@ async def fetch_hourly_forecast(
                         "condition_key": cond_key,
                         "pop": round(float(it.get("pop", 0)) * 100),
                         "is_now": (idx == 0),
+                        "is_tomorrow": dt.date() > today_date,
                     })
         except Exception as exc:
             log.warning("OWM hourly xatosi: %r", exc)
