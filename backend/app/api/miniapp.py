@@ -1444,34 +1444,40 @@ def _build_miniapp_html() -> str:
             } catch(e) {}
         }
 
+        function setText(id, text) {
+            const el = document.getElementById(id);
+            if (el && text !== undefined && text !== null) el.textContent = text;
+        }
+
         function updateStaticTexts() {
             const t = I18N[currentLang] || I18N.uz;
-            document.getElementById('tAqiTitle').textContent = t.aqiTitle;
-            document.getElementById('tHourlyTitle').textContent = t.hourlyTitle;
-            document.getElementById('tWeeklyTitle').textContent = t.weeklyTitle;
-            document.getElementById('tWindTitle').textContent = t.windTitle;
-            document.getElementById('tHumidityTitle').textContent = t.humidityTitle;
-            document.getElementById('tUvTitle').textContent = t.uvTitle;
-            document.getElementById('tSunTitle').textContent = t.sunTitle;
-            document.getElementById('tPressureTitle').textContent = t.pressureTitle;
-            document.getElementById('tChooseDistrictModal').textContent = t.chooseModal;
-            document.getElementById('districtSearchInput').placeholder = t.searchPlaceholder;
-            const tabCityEl = document.getElementById('tabCityBtn');
-            if (tabCityEl) tabCityEl.textContent = t.tabCity;
-            const tabRegEl = document.getElementById('tabRegionBtn');
-            if (tabRegEl) tabRegEl.textContent = t.tabRegions;
+            setText('tAqiTitle', t.aqiTitle);
+            setText('tHourlyTitle', t.hourlyTitle);
+            setText('tWeeklyTitle', t.weeklyTitle);
+            setText('tWindTitle', t.windTitle);
+            setText('tHumidityTitle', t.humidityTitle);
+            setText('tUvTitle', t.uvTitle);
+            setText('tSunTitle', t.sunTitle);
+            setText('tPressureTitle', t.pressureTitle);
+            setText('tChooseDistrictModal', t.chooseModal);
+            
+            const searchInput = document.getElementById('districtSearchInput');
+            if (searchInput && t.searchPlaceholder) searchInput.placeholder = t.searchPlaceholder;
+            
+            setText('tabCityBtn', t.tabCity);
+            setText('tabRegionBtn', t.tabRegions);
 
-            document.getElementById('lblUpdatedAt').textContent = t.updatedAt;
-            document.getElementById('lblCompass').textContent = t.compass;
-            document.getElementById('lblSunrise').textContent = t.sunrise;
-            document.getElementById('lblSunset').textContent = t.sunset;
-            document.getElementById('lblPressureDesc').textContent = t.pressureNormal;
-            document.getElementById('botTitle').textContent = t.botTitle;
-            document.getElementById('botSubtitle').textContent = t.botSubtitle;
-            document.getElementById('botDesc').textContent = t.botDesc;
-            document.getElementById('btnClose').textContent = t.close;
-            document.getElementById('badgePm25').textContent = t.epaBadge;
-            document.getElementById('badgePm10').textContent = t.epaBadge;
+            setText('lblUpdatedAt', t.updatedAt);
+            setText('lblCompass', t.compass);
+            setText('lblSunrise', t.sunrise);
+            setText('lblSunset', t.sunset);
+            setText('lblPressureDesc', t.pressureNormal);
+            setText('botTitle', t.botTitle);
+            setText('botSubtitle', t.botSubtitle);
+            setText('botDesc', t.botDesc);
+            setText('btnClose', t.close);
+            setText('badgePm25', t.epaBadge);
+            setText('badgePm10', t.epaBadge);
 
             // Dynamic placeholders if not loaded yet
             const weatherCondEl = document.getElementById('weatherCondition');
@@ -1493,8 +1499,7 @@ def _build_miniapp_html() -> str:
 
             // Active lang dropdown button & checkmark update
             const labels = { uz: 'UZ', ru: 'RU', en: 'EN' };
-            const labelEl = document.getElementById('currentLangLabel');
-            if (labelEl) labelEl.textContent = labels[currentLang] || 'UZ';
+            setText('currentLangLabel', labels[currentLang] || 'UZ');
 
             ['uz', 'ru', 'en'].forEach(l => {
                 const checkEl = document.getElementById('check' + l.charAt(0).toUpperCase() + l.slice(1));
@@ -1505,46 +1510,28 @@ def _build_miniapp_html() -> str:
             });
 
             // Settings Modal texts
-            const sTitle = document.getElementById('tSettingsModalTitle');
-            if (sTitle) sTitle.textContent = t.settingsTitle;
-            const secAlertsEl = document.getElementById('tSectionAlertsText');
-            if (secAlertsEl) secAlertsEl.textContent = t.secAlerts;
-            const lblAlertEl = document.getElementById('lblSettingAlert');
-            if (lblAlertEl) lblAlertEl.textContent = t.lblAlert;
-            const lblAlertDescEl = document.getElementById('lblSettingAlertDesc');
-            if (lblAlertDescEl) lblAlertDescEl.textContent = t.lblAlertDesc;
-            const lblDigestEl = document.getElementById('lblSettingDigest');
-            if (lblDigestEl) lblDigestEl.textContent = t.lblDigest;
-            const lblDigestDescEl = document.getElementById('lblSettingDigestDesc');
-            if (lblDigestDescEl) lblDigestDescEl.textContent = t.lblDigestDesc;
-            const secSchedEl = document.getElementById('tSectionScheduleText');
-            if (secSchedEl) secSchedEl.textContent = t.secSchedule;
-            const lblDigestTimeEl = document.getElementById('lblDigestTimeTitle');
-            if (lblDigestTimeEl) lblDigestTimeEl.textContent = t.lblDigestTime;
-            const lblTimezoneEl = document.getElementById('lblTimezoneTitle');
-            if (lblTimezoneEl) lblTimezoneEl.textContent = t.lblTimezone;
-            const secHomeEl = document.getElementById('tSectionHomeText');
-            if (secHomeEl) secHomeEl.textContent = t.secHome;
-            const lblHomeDescEl = document.getElementById('lblHomeDesc');
-            if (lblHomeDescEl) lblHomeDescEl.textContent = t.lblHomeDesc;
-            const lblCurHomeEl = document.getElementById('lblCurrentHomeLabel');
-            if (lblCurHomeEl) lblCurHomeEl.textContent = t.lblYourHome;
-            const btnSetHomeEl = document.getElementById('btnSetCurrentAsHomeText');
-            if (btnSetHomeEl) btnSetHomeEl.textContent = t.btnSetHome;
-            const btnClearHomeEl = document.getElementById('btnClearHomeText');
-            if (btnClearHomeEl) btnClearHomeEl.textContent = t.btnClearHome;
-            const sToast = document.getElementById('settingsSaveToast');
-            if (sToast) sToast.textContent = t.savedToast;
+            setText('tSettingsModalTitle', t.settingsTitle);
+            setText('tSectionAlertsText', t.secAlerts);
+            setText('lblSettingAlert', t.lblAlert);
+            setText('lblSettingAlertDesc', t.lblAlertDesc);
+            setText('lblSettingDigest', t.lblDigest);
+            setText('lblSettingDigestDesc', t.lblDigestDesc);
+            setText('tSectionScheduleText', t.secSchedule);
+            setText('lblDigestTimeTitle', t.lblDigestTime);
+            setText('lblTimezoneTitle', t.lblTimezone);
+            setText('tSectionHomeText', t.secHome);
+            setText('lblHomeDesc', t.lblHomeDesc);
+            setText('lblCurrentHomeLabel', t.lblYourHome);
+            setText('btnSetCurrentAsHomeText', t.btnSetHome);
+            setText('btnClearHomeText', t.btnClearHome);
+            setText('settingsSaveToast', t.savedToast);
 
             // District Modal texts
-            const hdBanner = document.getElementById('lblHomeDistrictBanner');
-            if (hdBanner) hdBanner.textContent = t.myHomeTitle;
+            setText('lblHomeDistrictBanner', t.myHomeTitle);
             const hdSelBtn = document.getElementById('lblSelectHomeBtn');
-            if (hdSelBtn) hdSelBtn.textContent = t.select.replace(' →', '');
-            const gSearchBadge = document.getElementById('lblGlobalSearchBadge');
-            if (gSearchBadge) gSearchBadge.textContent = t.globalSearchBadge;
-            const searchResTitle = document.getElementById('lblSearchResultsTitle');
-            if (searchResTitle) searchResTitle.textContent = t.preConfiguredTitle;
+            if (hdSelBtn && t.select) hdSelBtn.textContent = t.select.replace(' →', '');
+            setText('lblGlobalSearchBadge', t.globalSearchBadge);
+            setText('lblSearchResultsTitle', t.globalResultsTitle);
         }
 
         // --- Settings Management ---
@@ -2298,14 +2285,6 @@ def _build_miniapp_html() -> str:
                 modal.classList.add('hidden');
             }, 300);
         }
-            const modal = document.getElementById('districtModal');
-            const card = document.getElementById('districtModalCard');
-            modal.classList.add('opacity-0');
-            card.classList.add('translate-y-full');
-            setTimeout(() => {
-                modal.classList.add('hidden');
-            }, 300);
-        }
 
         function changeLang(lang) {
             haptic('selection');
@@ -2343,10 +2322,10 @@ def _build_miniapp_html() -> str:
 
         // Initialize on load
         window.addEventListener('DOMContentLoaded', () => {
-            updateStaticTexts();
-            loadDistrictsList();
-            loadUserSettings();
-            loadData();
+            try { updateStaticTexts(); } catch(e) { console.error('updateStaticTexts error:', e); }
+            try { loadDistrictsList(); } catch(e) { console.error('loadDistrictsList error:', e); }
+            try { loadUserSettings(); } catch(e) { console.error('loadUserSettings error:', e); }
+            try { loadData(); } catch(e) { console.error('loadData error:', e); }
         });
     </script>
 </body>
