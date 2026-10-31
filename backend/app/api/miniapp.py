@@ -145,6 +145,7 @@ async def select_location_district(
             "district": {
                 "id": district.id,
                 "name": district.name(lang),
+                "short_name": district.name(lang).split(",")[0].strip(),
                 "lat": district.lat,
                 "lon": district.lon,
             }
@@ -232,7 +233,7 @@ async def get_user_settings(
                 "home_district_name": "—",
             })
 
-        home_name = user.home_district.name(lang) if user.home_district else "—"
+        home_name = user.home_district.name(lang).split(",")[0].strip() if user.home_district else "—"
         return JSONResponse({
             "telegram_id": user.telegram_id,
             "alert_enabled": user.alert_enabled,
@@ -278,7 +279,7 @@ async def update_user_settings(
 
         await session.commit()
         user = await session.scalar(select(User).where(User.telegram_id == body.telegram_id))
-        home_name = user.home_district.name(lang) if (user and user.home_district) else "—"
+        home_name = user.home_district.name(lang).split(",")[0].strip() if (user and user.home_district) else "—"
         return JSONResponse({
             "ok": True,
             "settings": {
@@ -416,12 +417,12 @@ def _build_miniapp_html() -> str:
         <!-- Top Navigation Bar -->
         <header class="flex items-center justify-between pt-1">
             <!-- District Selector Button -->
-            <button onclick="openDistrictModal()" class="glass-pill px-3.5 py-1.5 rounded-full flex items-center gap-2 active:scale-95 transition text-sm font-semibold shadow-sm">
+            <button onclick="openDistrictModal()" class="glass-pill px-3.5 py-1.5 rounded-full flex items-center gap-1.5 active:scale-95 transition text-sm font-semibold shadow-sm max-w-[50%]">
                 <span class="w-4 h-4 text-rose-400 flex items-center justify-center flex-shrink-0">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full"><path d="M12 21c-4-4.5-7-8.5-7-12a7 7 0 0 1 14 0c0 3.5-3 7.5-7 12z"/><circle cx="12" cy="9" r="2.5" fill="currentColor"/></svg>
                 </span>
-                <span id="currentDistrictName">Yuklanmoqda...</span>
-                <svg class="w-4 h-4 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                <span id="currentDistrictName" class="truncate font-semibold">Yuklanmoqda...</span>
+                <svg class="w-3.5 h-3.5 opacity-70 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
             </button>
 
             <!-- Actions: Lang Switcher, Refresh & Settings -->
@@ -502,7 +503,7 @@ def _build_miniapp_html() -> str:
             </div>
 
             <!-- Gauge and Big AQI Number -->
-            <div class="flex items-center justify-between pt-4 pb-2">
+            <div class="flex items-center justify-between pt-3 pb-1">
                 <div class="flex flex-col">
                     <div class="flex items-baseline gap-2">
                         <span id="aqiNumber" class="text-5xl font-black tracking-tight font-sans">--</span>
@@ -510,23 +511,36 @@ def _build_miniapp_html() -> str:
                             Yuklanmoqda
                         </span>
                     </div>
-                    <p id="aqiAdviceText" class="text-xs text-white/80 mt-2 leading-relaxed max-w-[210px]">
-                        Havo ma'lumotlari tahlil qilinmoqda...
-                    </p>
                 </div>
 
                 <!-- Circular Visual Barometer -->
-                <div class="relative w-24 h-24 flex items-center justify-center">
-                    <svg class="w-24 h-24 transform -rotate-90" viewBox="0 0 100 100">
+                <div class="relative w-20 h-20 flex items-center justify-center">
+                    <svg class="w-20 h-20 transform -rotate-90" viewBox="0 0 100 100">
                         <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.15)" stroke-width="8" fill="none" stroke-linecap="round"></circle>
                         <circle id="aqiProgressCircle" cx="50" cy="50" r="40" stroke="#22c55e" stroke-width="9" fill="none" stroke-linecap="round" stroke-dasharray="251.2" stroke-dashoffset="251.2" class="transition-all duration-1000 ease-out"></circle>
                     </svg>
                     <div class="absolute inset-0 flex flex-col items-center justify-center">
-                        <div id="aqiGaugeCenterIcon" class="w-7 h-7 flex items-center justify-center">
+                        <div id="aqiGaugeCenterIcon" class="w-6 h-6 flex items-center justify-center">
                             <!-- Dynamically colored AQI icon -->
                         </div>
-                        <span class="text-[9px] uppercase font-bold text-white/60 mt-0.5">AQI</span>
+                        <span class="text-[8px] uppercase font-bold text-white/60 mt-0.5">AQI</span>
                     </div>
+                </div>
+            </div>
+
+            <!-- Smart Recommendations (Kiyim, Tashqarida, Havo) -->
+            <div id="smartAdviceList" class="mt-3 pt-3 border-t border-white/10 flex flex-col gap-2">
+                <div class="flex items-center gap-2.5 text-xs text-white/90">
+                    <span id="advIconClothing" class="w-6 h-6 rounded-lg bg-white/10 flex items-center justify-center flex-shrink-0 text-sm">🧥</span>
+                    <span id="advTextClothing" class="leading-snug">Yuklanmoqda...</span>
+                </div>
+                <div class="flex items-center gap-2.5 text-xs text-white/90">
+                    <span id="advIconOutdoors" class="w-6 h-6 rounded-lg bg-white/10 flex items-center justify-center flex-shrink-0 text-sm">🌤</span>
+                    <span id="advTextOutdoors" class="leading-snug">Yuklanmoqda...</span>
+                </div>
+                <div class="flex items-center gap-2.5 text-xs text-white/90">
+                    <span id="advIconHealth" class="w-6 h-6 rounded-lg bg-white/10 flex items-center justify-center flex-shrink-0 text-sm">🌿</span>
+                    <span id="advTextHealth" class="leading-snug">Havo ma'lumotlari tahlil qilinmoqda...</span>
                 </div>
             </div>
 
@@ -1448,7 +1462,7 @@ def _build_miniapp_html() -> str:
             if (weatherCondEl && (weatherCondEl.textContent.includes('...') || ['Yuklanmoqda...', 'Загрузка...', 'Loading...'].includes(weatherCondEl.textContent))) {
                 weatherCondEl.textContent = t.loading;
             }
-            const aqiAdviceEl = document.getElementById('aqiAdviceText');
+            const aqiAdviceEl = document.getElementById('advTextHealth') || document.getElementById('aqiAdviceText');
             if (aqiAdviceEl && (aqiAdviceEl.textContent.includes('...') || aqiAdviceEl.textContent.includes('tahlil') || aqiAdviceEl.textContent.includes('Анализ') || aqiAdviceEl.textContent.includes('Analyzing'))) {
                 aqiAdviceEl.textContent = t.analyzingAir;
             }
@@ -1560,7 +1574,7 @@ def _build_miniapp_html() -> str:
 
             if (alertToggle) alertToggle.checked = !!userSettings.alert_enabled;
             if (digestToggle) digestToggle.checked = !!userSettings.daily_digest;
-            if (homeNameEl) homeNameEl.textContent = userSettings.home_district_name || '—';
+            if (homeNameEl) homeNameEl.textContent = (userSettings.home_district_name || '—').split(',')[0].trim();
             if (tzSelect) tzSelect.value = userSettings.timezone || 'auto';
 
             document.querySelectorAll('.time-pill').forEach(btn => {
@@ -1751,8 +1765,9 @@ def _build_miniapp_html() -> str:
             const { district, air, weather, hourly, weekly } = data;
             const t = I18N[currentLang] || I18N.uz;
 
-            // 1. District
-            document.getElementById('currentDistrictName').textContent = district.name;
+            // 1. District (faqat birinchi qismini olamiz)
+            const rawDistName = district.short_name || district.name || '';
+            document.getElementById('currentDistrictName').textContent = rawDistName.split(',')[0].trim();
 
             // 2. Weather Hero (3D Volumetric Icon)
             const nowH = new Date().getHours();
@@ -1777,7 +1792,25 @@ def _build_miniapp_html() -> str:
             badge.style.color = air.color;
             badge.style.borderColor = `${air.color}50`;
 
-            document.getElementById('aqiAdviceText').textContent = air.advice;
+            // Smart Multi-Factor Recommendations (Kiyim, Tashqarida, Havo)
+            if (data.smart_advice && data.smart_advice.items && data.smart_advice.items.length >= 3) {
+                const adv = data.smart_advice.items;
+                const cIcon = document.getElementById('advIconClothing');
+                const cText = document.getElementById('advTextClothing');
+                const oIcon = document.getElementById('advIconOutdoors');
+                const oText = document.getElementById('advTextOutdoors');
+                const hIcon = document.getElementById('advIconHealth');
+                const hText = document.getElementById('advTextHealth');
+                if (cIcon) cIcon.textContent = adv[0].icon || '🧥';
+                if (cText) cText.textContent = adv[0].text;
+                if (oIcon) oIcon.textContent = adv[1].icon || '🌤';
+                if (oText) oText.textContent = adv[1].text;
+                if (hIcon) hIcon.textContent = adv[2].icon || '🌿';
+                if (hText) hText.textContent = adv[2].text;
+            } else {
+                const hText = document.getElementById('advTextHealth');
+                if (hText) hText.textContent = air.advice;
+            }
             document.getElementById('aqiUpdatedTime').textContent = air.updated_at || '--:--';
             
             const aqiCenterIcon = document.getElementById('aqiGaugeCenterIcon');

@@ -48,9 +48,10 @@ async def get_or_create_district_by_location(
     if district is not None:
         return district
 
-    name_uz = loc.display_name("uz")[:100]
-    name_ru = loc.display_name("ru")[:100]
-    name_en = loc.display_name("en")[:100]
+    # Faqat eng birinchi joylashuv nomini saqlaymiz (masalan: "Chilonzor", "Samarqand", "Istanbul")
+    name_uz = (loc.name_uz or loc.display_name("uz").split(",")[0]).strip()[:100]
+    name_ru = (loc.name_ru or loc.display_name("ru").split(",")[0]).strip()[:100]
+    name_en = (loc.name_en or loc.display_name("en").split(",")[0]).strip()[:100]
 
     district = District(
         slug=slug,

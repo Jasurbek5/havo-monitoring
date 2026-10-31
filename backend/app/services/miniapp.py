@@ -17,6 +17,7 @@ from app.core.aqi import AQILevel, LEVEL_EMOJI, level_for
 from app.core.i18n import t
 from app.models import District, DistrictKind
 from app.services.air_quality import AirQualityProvider, get_current_reading
+from app.services.smart_advice import generate_smart_advice
 from app.services.weather import (
     CurrentWeather,
     WeeklyForecast,
@@ -292,10 +293,23 @@ async def get_miniapp_full_data(
     else:
         cond_name = t(lang, cond_key)
 
+    # Aqlli ko'p faktorli tavsiyalar
+    smart_advice = generate_smart_advice(
+        aqi=aqi_val,
+        temp=weather.temp if weather else 20.0,
+        feels_like=weather.feels_like if weather else 20.0,
+        weather_code=weather.weather_code if weather else 0,
+        humidity=weather.humidity if weather else 45,
+        wind_speed=weather.wind_speed if weather else 2.5,
+        uv_index=uv_val,
+        lang=lang,
+    )
+
     return {
         "district": {
             "id": district.id,
             "name": district.name(lang),
+            "short_name": district.name(lang).split(",")[0].strip(),
             "name_uz": district.name_uz,
             "name_ru": district.name_ru,
             "name_en": district.name_en or district.name_uz,
@@ -314,6 +328,7 @@ async def get_miniapp_full_data(
             "advice": t(lang, f"advice_{level.value}"),
             "updated_at": updated_at_str,
         },
+        "smart_advice": smart_advice,
         "weather": {
             "temp": weather.temp if weather else 20.0,
             "feels_like": weather.feels_like if weather else 20.0,
