@@ -125,6 +125,7 @@ async def test_miniapp_search_and_select_location(seeded, session_factory):
                 "lon": 28.9784,
                 "country": "Turkey",
                 "telegram_id": 888888,
+                "set_as_home": True,
             }
             sel_res = await client.post("/api/miniapp/select-location?lang=uz", json=select_payload)
             assert sel_res.status_code == 200
@@ -132,3 +133,5 @@ async def test_miniapp_search_and_select_location(seeded, session_factory):
             assert sel_data["ok"] is True
             assert sel_data["district"]["id"] is not None
             assert "Istanbul" in sel_data["district"]["name"]
+            assert sel_data["is_home"] is True
+            assert sel_data["home_district_id"] == sel_data["district"]["id"]

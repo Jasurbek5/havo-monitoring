@@ -114,6 +114,7 @@ class LocationSelectRequest(BaseModel):
     country: str = ""
     admin_area: str = ""
     telegram_id: int | None = None
+    set_as_home: bool = False
 
 
 @miniapp_router.post("/api/miniapp/select-location")
@@ -134,11 +135,27 @@ async def select_location_district(
     async with get_session_factory()() as session:
         district = await get_or_create_district_by_location(session, loc)
 
+        user = None
         if body.telegram_id:
             user = await session.scalar(select(User).where(User.telegram_id == body.telegram_id))
             if user:
                 user.district_id = district.id
+                if body.set_as_home:
+                    user.home_district_id = district.id
                 await session.commit()
+                await session.refresh(user)
+
+        is_home = False
+        if user and user.home_district_id == district.id:
+            is_home = True
+        elif body.set_as_home:
+            is_home = True
+
+        home_name = "—"
+        if user and user.home_district:
+            home_name = user.home_district.name(lang).split(",")[0].strip()
+        elif body.set_as_home:
+            home_name = district.name(lang).split(",")[0].strip()
 
         return JSONResponse({
             "ok": True,
@@ -148,7 +165,10 @@ async def select_location_district(
                 "short_name": district.name(lang).split(",")[0].strip(),
                 "lat": district.lat,
                 "lon": district.lon,
-            }
+            },
+            "is_home": is_home,
+            "home_district_id": user.home_district_id if user else (district.id if body.set_as_home else None),
+            "home_district_name": home_name,
         })
 
 
@@ -418,7 +438,7 @@ def _build_miniapp_html() -> str:
         <header class="flex items-center justify-between pt-1">
             <!-- District Selector Button -->
             <button onclick="openDistrictModal()" class="glass-pill px-3.5 py-1.5 rounded-full flex items-center gap-1.5 active:scale-95 transition text-sm font-semibold shadow-sm max-w-[50%]">
-                <span class="w-4 h-4 text-rose-400 flex items-center justify-center flex-shrink-0">
+                <span id="currentDistrictIcon" class="w-4 h-4 text-rose-400 flex items-center justify-center flex-shrink-0">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full"><path d="M12 21c-4-4.5-7-8.5-7-12a7 7 0 0 1 14 0c0 3.5-3 7.5-7 12z"/><circle cx="12" cy="9" r="2.5" fill="currentColor"/></svg>
                 </span>
                 <span id="currentDistrictName" class="truncate font-semibold">Yuklanmoqda...</span>
@@ -715,41 +735,19 @@ def _build_miniapp_html() -> str:
             <div class="flex items-center justify-between pb-3 border-b border-white/10">
                 <div class="flex items-center gap-2">
                     <span class="w-5 h-5 text-sky-400 flex items-center justify-center">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full"><path d="M3 21h18M5 21V7l8-4v18M13 10l6 3v8M9 9v.01M9 13v.01M9 17v.01M17 15v.01M17 18v.01"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full"><path d="M12 21c-4-4.5-7-8.5-7-12a7 7 0 0 1 14 0c0 3.5-3 7.5-7 12z"/><circle cx="12" cy="9" r="2.5" fill="currentColor"/></svg>
                     </span>
-                    <h3 class="text-base font-bold" id="tChooseDistrictModal">Hududni tanlang</h3>
+                    <h3 class="text-base font-bold" id="tChooseDistrictModal">Joylashuvlar</h3>
                 </div>
                 <button onclick="closeDistrictModal()" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/70 active:scale-90 transition">✕</button>
             </div>
 
             <!-- Search Input with spinner -->
             <div class="pt-3 pb-2 relative">
-                <input type="text" id="districtSearchInput" oninput="handleDistrictSearch(this.value)" placeholder="Qidirish (masalan: Chilonzor, Samarqand, Istanbul)..." class="w-full bg-white/10 border border-white/15 rounded-xl px-4 py-2.5 text-sm text-white placeholder-white/40 focus:outline-none focus:border-sky-400 transition pr-9">
+                <input type="text" id="districtSearchInput" oninput="handleDistrictSearch(this.value)" placeholder="Shahar yoki tuman qidirish..." class="w-full bg-white/10 border border-white/15 rounded-xl px-4 py-2.5 text-sm text-white placeholder-white/40 focus:outline-none focus:border-sky-400 transition pr-9">
                 <div id="searchSpinner" class="absolute right-3 top-5 hidden">
                     <svg class="animate-spin h-4 w-4 text-sky-400" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
                 </div>
-            </div>
-
-            <!-- Home District Banner (if user has home district) -->
-            <div id="homeDistrictQuickCard" class="hidden mb-2">
-                <button onclick="selectHomeDistrict()" class="w-full text-left p-2.5 rounded-2xl bg-gradient-to-r from-sky-600/30 to-indigo-600/30 border border-sky-400/40 flex items-center justify-between active:scale-98 transition shadow-sm">
-                    <div class="flex items-center gap-2.5">
-                        <span class="w-5 h-5 text-amber-300 flex items-center justify-center flex-shrink-0">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full"><path d="M3 10.5L12 3l9 7.5V20a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-9.5z"/><path d="M9 22V12h6v10"/></svg>
-                        </span>
-                        <div>
-                            <div class="text-[10px] text-sky-300 font-bold uppercase tracking-wider" id="lblHomeDistrictBanner">Mening Uyim</div>
-                            <div id="homeDistrictBannerName" class="text-sm font-bold text-white mt-0.5">Chilonzor</div>
-                        </div>
-                    </div>
-                    <span class="text-xs px-2.5 py-1 rounded-full bg-sky-500/30 text-sky-200 border border-sky-400/30 font-semibold" id="lblSelectHomeBtn">Tanlash</span>
-                </button>
-            </div>
-
-            <!-- Tabs: Toshkent / Viloyatlar (Visible when search is empty) -->
-            <div id="districtTabsContainer" class="flex gap-2 pt-1 pb-2 text-xs font-bold">
-                <button onclick="switchDistrictTab('city')" id="tabCityBtn" class="flex-1 py-1.5 rounded-lg bg-sky-600 text-white transition">Toshkent tumanlari</button>
-                <button onclick="switchDistrictTab('regions')" id="tabRegionBtn" class="flex-1 py-1.5 rounded-lg bg-white/10 text-white/70 transition">Viloyatlar</button>
             </div>
 
             <!-- Search Mode Header (Visible when searching) -->
@@ -759,7 +757,7 @@ def _build_miniapp_html() -> str:
             </div>
 
             <!-- Districts List -->
-            <div id="districtListScroll" class="flex-1 overflow-y-auto hide-scrollbar flex flex-col gap-1.5 py-1">
+            <div id="districtListScroll" class="flex-1 overflow-y-auto hide-scrollbar flex flex-col gap-2 py-1">
                 <!-- Dynamically populated -->
             </div>
         </div>
@@ -941,6 +939,7 @@ def _build_miniapp_html() -> str:
             alert: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
             refresh: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>`,
             trash: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`,
+            plus: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`,
             dropSmall: `<svg viewBox="0 0 16 16" fill="currentColor" class="w-2.5 h-2.5 inline-block"><path d="M8 2 C8 2 3.5 7.5 3.5 11 A 4.5 4.5 0 0 0 12.5 11 C12.5 7.5 8 2 8 2 Z"/></svg>`,
         };
 
@@ -1261,13 +1260,18 @@ def _build_miniapp_html() -> str:
                 uvTitle: "UV Indeksi",
                 sunTitle: "Quyosh",
                 pressureTitle: "Bosim",
-                chooseModal: "Hududni tanlang",
-                searchPlaceholder: "Qidirish (masalan: Chilonzor, Samarqand, Istanbul)...",
-                tabCity: "Toshkent tumanlari",
-                tabRegions: "Viloyatlar",
-                preConfiguredTitle: "Oldindan kiritilgan hududlar",
-                globalResultsTitle: "Dunyo bo'ylab topilgan hududlar",
+                chooseModal: "Joylashuvlar",
+                searchPlaceholder: "Shahar yoki tuman qidirish...",
                 myHomeTitle: "Mening Uyim",
+                homeSubtitle: "Asosiy uy hududi",
+                noHomeSet: "Uy belgilanmagan",
+                setHomeHint: "Qidiruvdan tanlang",
+                savedLocationsTitle: "Saqlangan joylashuvlar",
+                noSavedLocations: "Hali saqlangan joylar yo'q",
+                setAsHome: "Uy",
+                saveLocation: "Saqlash",
+                activeBadge: "Faol",
+                globalResultsTitle: "Dunyo bo'ylab topilgan hududlar",
                 globalSearchBadge: "Global qidiruv",
                 max: "Maks",
                 min: "Min",
@@ -1317,13 +1321,18 @@ def _build_miniapp_html() -> str:
                 uvTitle: "УФ-Индекс",
                 sunTitle: "Солнце",
                 pressureTitle: "Давление",
-                chooseModal: "Выберите район",
-                searchPlaceholder: "Поиск (например: Чиланзар, Самарканд, Стамбул)...",
-                tabCity: "Районы Ташкента",
-                tabRegions: "Области",
-                preConfiguredTitle: "Стандартные регионы",
-                globalResultsTitle: "Результаты глобального поиска",
+                chooseModal: "Места и города",
+                searchPlaceholder: "Поиск города или района...",
                 myHomeTitle: "Мой дом",
+                homeSubtitle: "Основной домашний регион",
+                noHomeSet: "Дом не указан",
+                setHomeHint: "Выберите дом через поиск",
+                savedLocationsTitle: "Сохраненные места",
+                noSavedLocations: "Нет сохраненных мест",
+                setAsHome: "Дом",
+                saveLocation: "Сохранить",
+                activeBadge: "Активно",
+                globalResultsTitle: "Результаты глобального поиска",
                 globalSearchBadge: "Глобальный поиск",
                 max: "Макс",
                 min: "Мин",
@@ -1373,13 +1382,18 @@ def _build_miniapp_html() -> str:
                 uvTitle: "UV Index",
                 sunTitle: "Sun Position",
                 pressureTitle: "Pressure",
-                chooseModal: "Choose District",
-                searchPlaceholder: "Search (e.g. Chilanzar, Samarkand, Istanbul)...",
-                tabCity: "Tashkent Districts",
-                tabRegions: "Regions",
-                preConfiguredTitle: "Standard Districts",
+                chooseModal: "Locations",
+                searchPlaceholder: "Search city or district...",
+                myHomeTitle: "My Home",
+                homeSubtitle: "Primary home district",
+                noHomeSet: "No home set",
+                setHomeHint: "Select via search above",
+                savedLocationsTitle: "Saved Locations",
+                noSavedLocations: "No saved locations yet",
+                setAsHome: "Home",
+                saveLocation: "Save",
+                activeBadge: "Active",
                 globalResultsTitle: "Global Search Results",
-                myHomeTitle: "My Home District",
                 globalSearchBadge: "Global search",
                 max: "High",
                 min: "Low",
@@ -1442,8 +1456,10 @@ def _build_miniapp_html() -> str:
             document.getElementById('tPressureTitle').textContent = t.pressureTitle;
             document.getElementById('tChooseDistrictModal').textContent = t.chooseModal;
             document.getElementById('districtSearchInput').placeholder = t.searchPlaceholder;
-            document.getElementById('tabCityBtn').textContent = `${t.tabCity} (${allDistricts.city?.length || 12})`;
-            document.getElementById('tabRegionBtn').textContent = `${t.tabRegions} (${allDistricts.regions?.length || 13})`;
+            const tabCityEl = document.getElementById('tabCityBtn');
+            if (tabCityEl) tabCityEl.textContent = t.tabCity;
+            const tabRegEl = document.getElementById('tabRegionBtn');
+            if (tabRegEl) tabRegEl.textContent = t.tabRegions;
 
             document.getElementById('lblUpdatedAt').textContent = t.updatedAt;
             document.getElementById('lblCompass').textContent = t.compass;
@@ -1552,6 +1568,7 @@ def _build_miniapp_html() -> str:
                     }
                 } catch(e) {}
                 renderSettingsUI();
+                updateCurrentDistrictIcon();
                 return;
             }
 
@@ -1560,6 +1577,7 @@ def _build_miniapp_html() -> str:
                 if (res.ok) {
                     userSettings = await res.json();
                     renderSettingsUI();
+                    updateCurrentDistrictIcon();
                 }
             } catch(e) {
                 console.error("Sozlamalarni yuklashda xatolik:", e);
@@ -1768,6 +1786,8 @@ def _build_miniapp_html() -> str:
             // 1. District (faqat birinchi qismini olamiz)
             const rawDistName = district.short_name || district.name || '';
             document.getElementById('currentDistrictName').textContent = rawDistName.split(',')[0].trim();
+            saveLocationToList({ id: district.id, name: rawDistName });
+            updateCurrentDistrictIcon();
 
             // 2. Weather Hero (3D Volumetric Icon)
             const nowH = new Date().getHours();
@@ -1954,12 +1974,145 @@ def _build_miniapp_html() -> str:
             try {
                 const res = await fetch(`/api/miniapp/districts?lang=${currentLang}&telegram_id=${tgId}`);
                 allDistricts = await res.json();
-                updateHomeDistrictBanner();
-                renderDistrictsList();
+                updateCurrentDistrictIcon();
                 updateStaticTexts();
             } catch(e) {
                 console.error("Hududlar ro'yxatini yuklashda xatolik:", e);
             }
+        }
+
+        // --- Modern Saved Locations & Home Management ---
+        function getSavedLocations() {
+            try {
+                const raw = localStorage.getItem('havo_saved_locations');
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+                }
+            } catch(e) {}
+            return [{ id: 2, name: 'Chilonzor' }];
+        }
+
+        function saveLocationToList(item) {
+            if (!item || !item.id) return;
+            const shortName = (item.short_name || item.name || '').split(',')[0].trim();
+            if (!shortName) return;
+            let list = getSavedLocations();
+            list = list.filter(x => Number(x.id) !== Number(item.id));
+            list.unshift({ id: item.id, name: shortName });
+            if (list.length > 8) list = list.slice(0, 8);
+            try {
+                localStorage.setItem('havo_saved_locations', JSON.stringify(list));
+            } catch(e) {}
+        }
+
+        function removeLocationFromList(event, id) {
+            event.stopPropagation();
+            haptic('light');
+            let list = getSavedLocations();
+            list = list.filter(x => Number(x.id) !== Number(id));
+            try {
+                localStorage.setItem('havo_saved_locations', JSON.stringify(list));
+            } catch(e) {}
+            renderLocationsDrawer();
+        }
+
+        function updateCurrentDistrictIcon() {
+            const el = document.getElementById('currentDistrictIcon');
+            if (!el) return;
+            const homeId = userSettings.home_district_id || (allDistricts.home ? allDistricts.home.id : null);
+            const isHome = homeId && (Number(homeId) === Number(currentDistrictId));
+            if (isHome) {
+                el.className = "w-4 h-4 text-amber-300 flex items-center justify-center flex-shrink-0";
+                el.innerHTML = AppIcons.home;
+            } else {
+                el.className = "w-4 h-4 text-rose-400 flex items-center justify-center flex-shrink-0";
+                el.innerHTML = AppIcons.pin;
+            }
+        }
+
+        function renderLocationsDrawer() {
+            const t = I18N[currentLang] || I18N.uz;
+            const container = document.getElementById('districtListScroll');
+            if (!container) return;
+
+            const homeId = userSettings.home_district_id || (allDistricts.home ? allDistricts.home.id : null);
+            const rawHomeName = userSettings.home_district_name || (allDistricts.home ? allDistricts.home.name : null);
+            const homeName = rawHomeName ? rawHomeName.split(',')[0].trim() : null;
+
+            const savedList = getSavedLocations();
+            let html = '';
+
+            // 1. Home Section
+            html += `
+            <div class="mb-3">
+                <div class="text-[10px] font-bold text-amber-300 uppercase tracking-wider px-1 pb-1.5 flex items-center gap-1.5">
+                    <span class="w-3.5 h-3.5 text-amber-300 flex items-center justify-center">${AppIcons.home}</span>
+                    <span>${t.myHomeTitle}</span>
+                </div>`;
+
+            if (homeId && homeName && homeName !== '—') {
+                const isHomeCurrent = Number(homeId) === Number(currentDistrictId);
+                html += `
+                <div onclick="selectDistrict(${homeId})" class="p-3 rounded-2xl bg-gradient-to-r from-amber-500/20 via-sky-600/20 to-indigo-600/20 border border-amber-400/40 flex items-center justify-between cursor-pointer active:scale-98 transition shadow-sm">
+                    <div class="flex items-center gap-3">
+                        <span class="w-8 h-8 rounded-xl bg-amber-400/25 text-amber-300 flex items-center justify-center flex-shrink-0">
+                            ${AppIcons.home}
+                        </span>
+                        <div>
+                            <div class="text-sm font-bold text-white">${homeName}</div>
+                            <div class="text-[10px] text-amber-200/80">${t.homeSubtitle}</div>
+                        </div>
+                    </div>
+                    ${isHomeCurrent ? `<span class="text-xs px-2.5 py-1 rounded-full bg-amber-400/30 text-amber-200 border border-amber-400/40 font-bold">${t.activeBadge}</span>` : `<span class="text-xs text-sky-300 font-semibold">${t.select}</span>`}
+                </div>`;
+            } else {
+                html += `
+                <div class="p-3 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between text-white/50 text-xs">
+                    <div class="flex items-center gap-2.5">
+                        <span class="w-6 h-6 rounded-lg bg-white/10 text-white/40 flex items-center justify-center flex-shrink-0">${AppIcons.home}</span>
+                        <span>${t.noHomeSet} — ${t.setHomeHint}</span>
+                    </div>
+                </div>`;
+            }
+            html += `</div>`;
+
+            // 2. Saved / Recent Locations
+            html += `
+            <div>
+                <div class="text-[10px] font-bold text-sky-400 uppercase tracking-wider px-1 pb-1.5 flex items-center gap-1.5">
+                    <span class="w-3.5 h-3.5 text-sky-400 flex items-center justify-center">${AppIcons.pin}</span>
+                    <span>${t.savedLocationsTitle}</span>
+                </div>
+                <div class="flex flex-col gap-1.5">`;
+
+            if (savedList.length === 0) {
+                html += `<div class="text-center py-6 text-white/40 text-xs">${t.noSavedLocations}</div>`;
+            } else {
+                html += savedList.map(item => {
+                    const isCur = Number(item.id) === Number(currentDistrictId);
+                    const isThisHome = homeId && (Number(item.id) === Number(homeId));
+                    return `
+                    <div onclick="selectDistrict(${item.id})" class="p-3 rounded-xl flex items-center justify-between transition cursor-pointer ${isCur ? 'bg-sky-600/40 border border-sky-400/50 font-bold' : 'bg-white/5 hover:bg-white/10 text-white/80'}">
+                        <div class="flex items-center gap-2.5 truncate">
+                            <span class="w-4 h-4 ${isThisHome ? 'text-amber-300' : 'text-rose-400'} flex items-center justify-center flex-shrink-0">
+                                ${isThisHome ? AppIcons.home : AppIcons.pin}
+                            </span>
+                            <span class="text-sm font-semibold truncate">${item.name}</span>
+                        </div>
+                        <div class="flex items-center gap-2 flex-shrink-0">
+                            ${isCur ? `<span class="text-xs px-2 py-0.5 rounded-full bg-sky-400/30 text-sky-200 border border-sky-400/40 font-bold">${t.activeBadge}</span>` : `<span class="text-white/30 text-xs">${t.select}</span>`}
+                            <button onclick="removeLocationFromList(event, ${item.id})" title="O'chirish" class="w-6 h-6 rounded-lg bg-white/5 hover:bg-red-500/20 text-white/40 hover:text-red-300 flex items-center justify-center transition">✕</button>
+                        </div>
+                    </div>`;
+                }).join('');
+            }
+
+            html += `
+                </div>
+            </div>`;
+
+            container.innerHTML = html;
         }
 
         let searchDebounceTimer = null;
@@ -1970,20 +2123,13 @@ def _build_miniapp_html() -> str:
             const query = (val || '').trim();
 
             if (!query) {
-                document.getElementById('districtTabsContainer')?.classList.remove('hidden');
                 document.getElementById('searchSectionHeader')?.classList.add('hidden');
                 document.getElementById('searchSpinner')?.classList.add('hidden');
-                updateHomeDistrictBanner();
-                renderDistrictsList();
+                renderLocationsDrawer();
                 return;
             }
 
-            document.getElementById('districtTabsContainer')?.classList.add('hidden');
-            document.getElementById('homeDistrictQuickCard')?.classList.add('hidden');
             document.getElementById('searchSectionHeader')?.classList.remove('hidden');
-
-            renderLocalMatchingDistricts(query);
-
             const spinner = document.getElementById('searchSpinner');
             if (spinner) spinner.classList.remove('hidden');
 
@@ -1999,82 +2145,63 @@ def _build_miniapp_html() -> str:
                     globalSearchResults = [];
                 } finally {
                     if (spinner) spinner.classList.add('hidden');
-                    renderSearchResults(query);
+                    renderSearchResults();
                 }
             }, 350);
         }
 
-        function renderLocalMatchingDistricts(query) {
+        function renderSearchResults() {
             const t = I18N[currentLang] || I18N.uz;
             const container = document.getElementById('districtListScroll');
-            const q = query.toLowerCase();
+            if (!container) return;
 
-            const allLocal = [...(allDistricts.city || []), ...(allDistricts.regions || [])];
-            const localMatches = allLocal.filter(d => d.name.toLowerCase().includes(q));
-
-            let html = '';
-            if (localMatches.length > 0) {
-                html += `<div class="text-[10px] font-bold text-sky-400 uppercase tracking-wider px-1 pt-1 pb-0.5">${t.preConfiguredTitle}</div>`;
-                html += localMatches.map(d => `
-                    <button onclick="selectDistrict(${d.id})" class="w-full text-left p-3 rounded-xl flex items-center justify-between transition ${d.id === currentDistrictId ? 'bg-sky-600/40 border border-sky-400/50 font-bold' : 'bg-white/5 hover:bg-white/10 text-white/80'}">
-                        <span class="flex items-center gap-2"><span class="w-3.5 h-3.5 text-rose-400 flex items-center justify-center flex-shrink-0">${AppIcons.pin}</span> <span>${d.name}</span></span>
-                        ${d.id === currentDistrictId ? '<span class="text-sky-300">✓</span>' : `<span class="text-white/30 text-xs">${t.select}</span>`}
-                    </button>
-                `).join('');
-            }
-            container.innerHTML = html;
-        }
-
-        function renderSearchResults(query) {
-            const t = I18N[currentLang] || I18N.uz;
-            const container = document.getElementById('districtListScroll');
-            const q = query.toLowerCase();
-
-            const allLocal = [...(allDistricts.city || []), ...(allDistricts.regions || [])];
-            const localMatches = allLocal.filter(d => d.name.toLowerCase().includes(q));
-
-            let html = '';
-
-            // 1. Local pre-configured matches
-            if (localMatches.length > 0) {
-                html += `<div class="text-[10px] font-bold text-sky-400 uppercase tracking-wider px-1 pt-1 pb-0.5">${t.preConfiguredTitle}</div>`;
-                html += localMatches.map(d => `
-                    <button onclick="selectDistrict(${d.id})" class="w-full text-left p-3 rounded-xl flex items-center justify-between transition ${d.id === currentDistrictId ? 'bg-sky-600/40 border border-sky-400/50 font-bold' : 'bg-white/5 hover:bg-white/10 text-white/80'}">
-                        <span class="flex items-center gap-2"><span class="w-3.5 h-3.5 text-rose-400 flex items-center justify-center flex-shrink-0">${AppIcons.pin}</span> <span>${d.name}</span></span>
-                        ${d.id === currentDistrictId ? '<span class="text-sky-300">✓</span>' : `<span class="text-white/30 text-xs">${t.select}</span>`}
-                    </button>
-                `).join('');
+            if (globalSearchResults.length === 0) {
+                container.innerHTML = `<div class="text-center py-8 text-white/40 text-xs">${t.notFound}</div>`;
+                return;
             }
 
-            // 2. Global search results
-            if (globalSearchResults.length > 0) {
-                html += `<div class="text-[10px] font-bold text-amber-300 uppercase tracking-wider px-1 pt-2 pb-0.5 flex items-center gap-1.5"><span class="w-3.5 h-3.5 text-sky-400 flex items-center justify-center flex-shrink-0">${AppIcons.globe}</span> <span>${t.globalResultsTitle}</span></div>`;
-                html += globalSearchResults.map((loc, idx) => `
-                    <button onclick="selectGlobalLocation(${idx})" class="w-full text-left p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 hover:border-sky-400/30 transition flex items-center justify-between">
-                        <div class="flex items-center gap-2.5 truncate pr-2">
-                            <span class="w-5 h-5 text-sky-400 flex items-center justify-center flex-shrink-0">${AppIcons.globe}</span>
-                            <div class="truncate">
-                                <div class="text-xs font-bold text-white truncate">${loc.name}</div>
-                                <div class="text-[10px] text-white/50 truncate">${loc.country || ''} ${loc.admin_area ? '• ' + loc.admin_area : ''}</div>
-                            </div>
+            let html = `
+            <div class="text-[10px] font-bold text-amber-300 uppercase tracking-wider px-1 pt-1 pb-1 flex items-center gap-1.5">
+                <span class="w-3.5 h-3.5 text-sky-400 flex items-center justify-center">${AppIcons.globe}</span>
+                <span>${t.globalResultsTitle}</span>
+            </div>
+            <div class="flex flex-col gap-2">`;
+
+            html += globalSearchResults.map((loc, idx) => {
+                const shortCity = (loc.short_name || loc.name_uz || loc.name || '').split(',')[0].trim();
+                const subtitle = [loc.admin_area, loc.country].filter(Boolean).join(', ');
+                return `
+                <div class="p-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-between transition">
+                    <div onclick="selectAndSaveLocation(${idx})" class="flex items-center gap-2.5 flex-1 truncate mr-2 cursor-pointer">
+                        <span class="w-7 h-7 rounded-xl bg-sky-500/20 text-sky-400 flex items-center justify-center flex-shrink-0">
+                            ${AppIcons.globe}
+                        </span>
+                        <div class="truncate">
+                            <div class="text-xs font-bold text-white truncate">${shortCity}</div>
+                            <div class="text-[10px] text-white/50 truncate">${subtitle}</div>
                         </div>
-                        <span class="text-xs text-sky-300 font-semibold flex-shrink-0">${t.select}</span>
-                    </button>
-                `).join('');
-            }
+                    </div>
+                    <div class="flex items-center gap-1.5 flex-shrink-0">
+                        <button onclick="selectAndSetHome(${idx})" title="${t.setAsHome}" class="px-2.5 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/40 border border-amber-400/40 text-[11px] font-bold text-amber-300 flex items-center gap-1 active:scale-95 transition">
+                            <span class="w-3.5 h-3.5 flex items-center justify-center">${AppIcons.home}</span>
+                            <span>${t.setAsHome}</span>
+                        </button>
+                        <button onclick="selectAndSaveLocation(${idx})" title="${t.saveLocation}" class="px-2.5 py-1.5 rounded-xl bg-sky-500/20 hover:bg-sky-500/40 border border-sky-400/40 text-[11px] font-bold text-sky-300 flex items-center gap-1 active:scale-95 transition">
+                            <span class="w-3.5 h-3.5 flex items-center justify-center">${AppIcons.plus}</span>
+                            <span>${t.saveLocation}</span>
+                        </button>
+                    </div>
+                </div>`;
+            }).join('');
 
-            if (localMatches.length === 0 && globalSearchResults.length === 0) {
-                html = `<div class="text-center py-8 text-white/40 text-xs">${t.notFound}</div>`;
-            }
-
+            html += `</div>`;
             container.innerHTML = html;
         }
 
-        async function selectGlobalLocation(index) {
+        async function selectAndSetHome(idx) {
             haptic('medium');
-            const loc = globalSearchResults[index];
+            const loc = globalSearchResults[idx];
             if (!loc) return;
-
             const tgUser = tg?.initDataUnsafe?.user;
             const tgId = tgUser?.id;
 
@@ -2082,81 +2209,63 @@ def _build_miniapp_html() -> str:
                 const res = await fetch(`/api/miniapp/select-location?lang=${currentLang}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(Object.assign({ telegram_id: tgId }, loc))
+                    body: JSON.stringify(Object.assign({ telegram_id: tgId, set_as_home: true }, loc))
                 });
                 if (res.ok) {
                     const data = await res.json();
                     if (data.district) {
                         currentDistrictId = data.district.id;
+                        userSettings.home_district_id = data.district.id;
+                        userSettings.home_district_name = data.district.short_name || data.district.name;
+                        saveLocationToList({ id: data.district.id, name: data.district.short_name });
+                        updateCurrentDistrictIcon();
                         closeDistrictModal();
                         loadData();
                         return;
                     }
                 }
-            } catch (e) {
-                console.error("Global hududni tanlashda xatolik:", e);
+            } catch(e) {
+                console.error("Uy hududini saqlashda xatolik:", e);
             }
-
             closeDistrictModal();
             loadData();
         }
 
-        function selectHomeDistrict() {
-            if (allDistricts.home && allDistricts.home.id) {
-                selectDistrict(allDistricts.home.id);
+        async function selectAndSaveLocation(idx) {
+            haptic('medium');
+            const loc = globalSearchResults[idx];
+            if (!loc) return;
+            const tgUser = tg?.initDataUnsafe?.user;
+            const tgId = tgUser?.id;
+
+            try {
+                const res = await fetch(`/api/miniapp/select-location?lang=${currentLang}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(Object.assign({ telegram_id: tgId, set_as_home: false }, loc))
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.district) {
+                        currentDistrictId = data.district.id;
+                        saveLocationToList({ id: data.district.id, name: data.district.short_name });
+                        updateCurrentDistrictIcon();
+                        closeDistrictModal();
+                        loadData();
+                        return;
+                    }
+                }
+            } catch(e) {
+                console.error("Hududni saqlashda xatolik:", e);
             }
-        }
-
-        function updateHomeDistrictBanner() {
-            const homeCard = document.getElementById('homeDistrictQuickCard');
-            const homeName = document.getElementById('homeDistrictBannerName');
-            const searchVal = document.getElementById('districtSearchInput')?.value?.trim();
-
-            if (!searchVal && allDistricts.home && allDistricts.home.id) {
-                if (homeName) homeName.textContent = allDistricts.home.name;
-                homeCard?.classList.remove('hidden');
-            } else {
-                homeCard?.classList.add('hidden');
-            }
-        }
-
-        function renderDistrictsList() {
-            const t = I18N[currentLang] || I18N.uz;
-            const list = allDistricts[currentTab] || [];
-            const container = document.getElementById('districtListScroll');
-
-            if (list.length === 0) {
-                container.innerHTML = `<div class="text-center py-6 text-white/40 text-xs">${t.notFound}</div>`;
-                return;
-            }
-
-            container.innerHTML = list.map(d => `
-                <button onclick="selectDistrict(${d.id})" class="w-full text-left p-3 rounded-xl flex items-center justify-between transition ${d.id === currentDistrictId ? 'bg-sky-600/40 border border-sky-400/50 font-bold' : 'bg-white/5 hover:bg-white/10 text-white/80'}">
-                    <span>${d.name}</span>
-                    ${d.id === currentDistrictId ? '<span class="text-sky-300">✓</span>' : `<span class="text-white/30 text-xs">${t.select}</span>`}
-                </button>
-            `).join('');
-        }
-
-        function switchDistrictTab(tab) {
-            haptic('selection');
-            currentTab = tab;
-            const cityBtn = document.getElementById('tabCityBtn');
-            const regBtn = document.getElementById('tabRegionBtn');
-
-            if (tab === 'city') {
-                cityBtn.className = "flex-1 py-1.5 rounded-lg bg-sky-600 text-white transition";
-                regBtn.className = "flex-1 py-1.5 rounded-lg bg-white/10 text-white/70 transition";
-            } else {
-                cityBtn.className = "flex-1 py-1.5 rounded-lg bg-white/10 text-white/70 transition";
-                regBtn.className = "flex-1 py-1.5 rounded-lg bg-sky-600 text-white transition";
-            }
-            renderDistrictsList();
+            closeDistrictModal();
+            loadData();
         }
 
         function selectDistrict(id) {
             haptic('medium');
             currentDistrictId = id;
+            updateCurrentDistrictIcon();
             closeDistrictModal();
             loadData();
         }
@@ -2165,11 +2274,10 @@ def _build_miniapp_html() -> str:
             haptic('light');
             const searchInput = document.getElementById('districtSearchInput');
             if (searchInput) searchInput.value = '';
-            document.getElementById('districtTabsContainer')?.classList.remove('hidden');
             document.getElementById('searchSectionHeader')?.classList.add('hidden');
             document.getElementById('searchSpinner')?.classList.add('hidden');
-            updateHomeDistrictBanner();
-            renderDistrictsList();
+
+            renderLocationsDrawer();
 
             const modal = document.getElementById('districtModal');
             const card = document.getElementById('districtModalCard');
@@ -2182,6 +2290,14 @@ def _build_miniapp_html() -> str:
 
         function closeDistrictModal() {
             haptic('light');
+            const modal = document.getElementById('districtModal');
+            const card = document.getElementById('districtModalCard');
+            modal.classList.add('opacity-0');
+            card.classList.add('translate-y-full');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
             const modal = document.getElementById('districtModal');
             const card = document.getElementById('districtModalCard');
             modal.classList.add('opacity-0');

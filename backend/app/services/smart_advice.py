@@ -191,3 +191,4 @@ def generate_smart_advice(
         "items": items,
         "full_text": full_text,
     }
+

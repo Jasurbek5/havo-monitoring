@@ -30,3 +30,4 @@ def test_smart_advice_health():
     # Clean AQI
     res2 = generate_smart_advice(aqi=25, temp=20.0, feels_like=20.0, lang="uz")
     assert "toza" in res2["items"][2]["text"]
+
