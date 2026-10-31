@@ -452,6 +452,15 @@ def _build_miniapp_html() -> str:
 </head>
 <body class="theme-clear-day text-white antialiased pb-12 transition-all">
 
+    <!-- Floating Refresh / Loading Indicator Pill -->
+    <div id="topLoadingIndicator" class="fixed top-2.5 left-1/2 -translate-x-1/2 z-50 bg-slate-900/90 border border-sky-400/40 text-sky-200 px-3.5 py-1 rounded-full shadow-lg backdrop-blur-md text-xs font-semibold flex items-center gap-1.5 transition-all duration-300 opacity-0 pointer-events-none -translate-y-4">
+        <svg class="animate-spin w-3.5 h-3.5 text-sky-400" viewBox="0 0 24 24" fill="none">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+        </svg>
+        <span id="lblLoadingIndicatorText">Yangilanmoqda...</span>
+    </div>
+
     <!-- Ambient Glow FX -->
     <div class="fixed inset-0 pointer-events-none overflow-hidden z-0">
         <div id="ambientGlow" class="absolute -top-32 left-1/2 -translate-x-1/2 w-96 h-96 bg-white/20 rounded-full blur-3xl transition-all duration-1000"></div>
@@ -749,7 +758,7 @@ def _build_miniapp_html() -> str:
                     </span>
                 </div>
                 <div>
-                    <div class="text-sm font-bold" id="botSubtitle">Havo va Ob-havo</div>
+                    <div class="text-sm font-bold" id="botSubtitle">API va Ob-havo</div>
                     <div class="text-[11px] text-white/70 mt-1" id="botDesc">Avtomatlashtirilgan monitoring tizimi</div>
                 </div>
                 <button onclick="closeMiniApp()" id="btnClose" class="w-full py-1.5 rounded-xl bg-white/20 active:scale-95 transition text-xs font-bold text-center">
@@ -1316,9 +1325,10 @@ def _build_miniapp_html() -> str:
                 humidityComfortDry: "Quruq havo",
                 humidityComfortHumid: "Yuqori namlik",
                 botTitle: "EkoRadar",
-                botSubtitle: "Havo va Ob-havo",
+                botSubtitle: "API va Ob-havo",
                 botDesc: "Avtomatlashtirilgan monitoring tizimi",
                 lblLiveStatus: "Jonli",
+                lblLoadingIndicator: "Yangilanmoqda...",
                 close: "Yopish ✕",
                 now: "Hozir",
                 today: "Bugun",
@@ -1378,9 +1388,10 @@ def _build_miniapp_html() -> str:
                 humidityComfortDry: "Сухой воздух",
                 humidityComfortHumid: "Высокая влажность",
                 botTitle: "EkoRadar",
-                botSubtitle: "Воздух и Погода",
+                botSubtitle: "API и Погода",
                 botDesc: "Автоматизированный мониторинг",
                 lblLiveStatus: "В сети",
+                lblLoadingIndicator: "Обновление...",
                 close: "Закрыть ✕",
                 now: "Сейчас",
                 today: "Сегодня",
@@ -1440,9 +1451,10 @@ def _build_miniapp_html() -> str:
                 humidityComfortDry: "Dry air",
                 humidityComfortHumid: "High humidity",
                 botTitle: "EkoRadar",
-                botSubtitle: "Air & Weather",
+                botSubtitle: "API & Weather",
                 botDesc: "Automated monitoring system",
                 lblLiveStatus: "Live",
+                lblLoadingIndicator: "Updating...",
                 close: "Close ✕",
                 now: "Now",
                 today: "Today",
@@ -1511,6 +1523,7 @@ def _build_miniapp_html() -> str:
             setText('botSubtitle', t.botSubtitle);
             setText('botDesc', t.botDesc);
             setText('lblLiveStatus', t.lblLiveStatus);
+            setText('lblLoadingIndicatorText', t.lblLoadingIndicator);
             setText('btnClose', t.close);
             setText('badgePm25', t.epaBadge);
             setText('badgePm10', t.epaBadge);
@@ -1795,7 +1808,27 @@ def _build_miniapp_html() -> str:
             }
         }
 
+        function setLoadingState(isLoading) {
+            const pill = document.getElementById('topLoadingIndicator');
+            const refBtn = document.getElementById('refreshBtn');
+            const iconSvg = refBtn?.querySelector('svg');
+            if (isLoading) {
+                if (pill) {
+                    pill.classList.remove('opacity-0', '-translate-y-4', 'pointer-events-none');
+                    pill.classList.add('opacity-100', 'translate-y-0');
+                }
+                if (iconSvg) iconSvg.classList.add('animate-spin');
+            } else {
+                if (pill) {
+                    pill.classList.add('opacity-0', '-translate-y-4', 'pointer-events-none');
+                    pill.classList.remove('opacity-100', 'translate-y-0');
+                }
+                if (iconSvg) iconSvg.classList.remove('animate-spin');
+            }
+        }
+
         async function loadData() {
+            setLoadingState(true);
             const tgUser = tg?.initDataUnsafe?.user;
             const tgId = tgUser?.id || '';
             const qDist = currentDistrictId ? `&district_id=${currentDistrictId}` : '';
@@ -1821,6 +1854,8 @@ def _build_miniapp_html() -> str:
                 }
             } catch (err) {
                 console.error("MiniApp yuklashda xatolik:", err);
+            } finally {
+                setLoadingState(false);
             }
         }
 
@@ -2366,9 +2401,6 @@ def _build_miniapp_html() -> str:
 
         function refreshData() {
             haptic('medium');
-            const btn = document.getElementById('refreshBtn');
-            btn.classList.add('spin-anim');
-            setTimeout(() => btn.classList.remove('spin-anim'), 650);
             loadData();
             loadUserSettings();
         }
