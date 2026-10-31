@@ -5,7 +5,7 @@ import html
 import logging
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel
 from sqlalchemy import select
@@ -293,6 +293,12 @@ async def update_user_settings(
         })
 
 
+@miniapp_router.get("/favicon.ico")
+async def favicon() -> Response:
+    """Brauzerlar uchun favicon 404 logini oldini olish."""
+    return Response(status_code=204)
+
+
 @miniapp_router.get("/app", response_class=HTMLResponse)
 @miniapp_router.get("/miniapp", response_class=HTMLResponse)
 async def serve_miniapp_html(request: Request) -> HTMLResponse:
@@ -309,6 +315,7 @@ def _build_miniapp_html() -> str:
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Havo & Ob-havo</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌤</text></svg>">
     <!-- Telegram WebApp SDK -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <!-- Tailwind CSS CDN -->
@@ -398,80 +405,6 @@ def _build_miniapp_html() -> str:
 </head>
 <body class="theme-clear-day text-white antialiased pb-12 transition-all">
 
-    <!-- Global Master SVG Definitions (Shared Gradients & Filters for Maximum Performance) -->
-    <svg style="display:none;" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-            <!-- 3D Sun Gradients -->
-            <radialGradient id="gradSun" cx="35%" cy="35%" r="65%">
-                <stop offset="0%" stop-color="#FFF7B2"/>
-                <stop offset="40%" stop-color="#FBBF24"/>
-                <stop offset="85%" stop-color="#F59E0B"/>
-                <stop offset="100%" stop-color="#D97706"/>
-            </radialGradient>
-            <radialGradient id="gradSunCorona" cx="50%" cy="50%" r="50%">
-                <stop offset="60%" stop-color="#F59E0B" stop-opacity="0.35"/>
-                <stop offset="100%" stop-color="#F59E0B" stop-opacity="0"/>
-            </radialGradient>
-            <!-- 3D Moon Gradients -->
-            <linearGradient id="gradMoon" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#FEF08A"/>
-                <stop offset="50%" stop-color="#FCD34D"/>
-                <stop offset="100%" stop-color="#F59E0B"/>
-            </linearGradient>
-            <radialGradient id="gradMoonGlow" cx="45%" cy="45%" r="55%">
-                <stop offset="0%" stop-color="#FDE047" stop-opacity="0.35"/>
-                <stop offset="100%" stop-color="#FDE047" stop-opacity="0"/>
-            </radialGradient>
-            <!-- 3D Cloud Gradients -->
-            <linearGradient id="gradCloudFront" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stop-color="#FFFFFF"/>
-                <stop offset="65%" stop-color="#F1F5F9"/>
-                <stop offset="100%" stop-color="#CBD5E1"/>
-            </linearGradient>
-            <linearGradient id="gradCloudBack" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stop-color="#CBD5E1"/>
-                <stop offset="100%" stop-color="#64748B"/>
-            </linearGradient>
-            <linearGradient id="gradCloudDark" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stop-color="#64748B"/>
-                <stop offset="60%" stop-color="#334155"/>
-                <stop offset="100%" stop-color="#1E293B"/>
-            </linearGradient>
-            <!-- Rain & Lightning Gradients -->
-            <linearGradient id="gradRainDrop" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stop-color="#38BDF8"/>
-                <stop offset="100%" stop-color="#0284C7"/>
-            </linearGradient>
-            <linearGradient id="gradLightning" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#FEF08A"/>
-                <stop offset="50%" stop-color="#FACC15"/>
-                <stop offset="100%" stop-color="#EAB308"/>
-            </linearGradient>
-            <!-- Fog Waves Gradients -->
-            <linearGradient id="gradFog1" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stop-color="#94A3B8" stop-opacity="0.2"/>
-                <stop offset="35%" stop-color="#E2E8F0" stop-opacity="0.95"/>
-                <stop offset="65%" stop-color="#F1F5F9" stop-opacity="0.95"/>
-                <stop offset="100%" stop-color="#94A3B8" stop-opacity="0.2"/>
-            </linearGradient>
-            <linearGradient id="gradFog2" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stop-color="#64748B" stop-opacity="0.2"/>
-                <stop offset="35%" stop-color="#CBD5E1" stop-opacity="0.85"/>
-                <stop offset="65%" stop-color="#E2E8F0" stop-opacity="0.85"/>
-                <stop offset="100%" stop-color="#64748B" stop-opacity="0.2"/>
-            </linearGradient>
-            <!-- Widget Gradients -->
-            <linearGradient id="gradDropWidget" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stop-color="#38BDF8"/>
-                <stop offset="100%" stop-color="#0284C7"/>
-            </linearGradient>
-            <linearGradient id="gradLeafWidget" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#34D399"/>
-                <stop offset="100%" stop-color="#059669"/>
-            </linearGradient>
-        </defs>
-    </svg>
-
     <!-- Ambient Glow FX -->
     <div class="fixed inset-0 pointer-events-none overflow-hidden z-0">
         <div id="ambientGlow" class="absolute -top-32 left-1/2 -translate-x-1/2 w-96 h-96 bg-white/20 rounded-full blur-3xl transition-all duration-1000"></div>
@@ -496,7 +429,9 @@ def _build_miniapp_html() -> str:
                 <!-- Language Selector Dropdown -->
                 <div class="relative" id="langMenuContainer">
                     <button onclick="toggleLangMenu(event)" id="langDropdownBtn" class="glass-pill px-3 py-1.5 rounded-full flex items-center gap-1.5 text-xs font-bold active:scale-95 transition shadow-sm">
-                        <span id="currentLangFlag">🇺🇿</span>
+                        <span class="w-3.5 h-3.5 text-sky-300 flex items-center justify-center flex-shrink-0">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full"><circle cx="12" cy="12" r="9"/><line x1="3" y1="12" x2="21" y2="12"/><path d="M12 3a14.5 14.5 0 0 1 0 18a14.5 14.5 0 0 1 0-18z"/></svg>
+                        </span>
                         <span id="currentLangLabel">UZ</span>
                         <svg class="w-3 h-3 opacity-70 transform transition-transform duration-200" id="langChevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
@@ -506,15 +441,15 @@ def _build_miniapp_html() -> str:
                     <!-- Language Popup Dropdown -->
                     <div id="langDropdownMenu" class="absolute right-0 mt-1.5 w-36 bg-slate-900/95 border border-white/20 p-1.5 rounded-2xl hidden z-50 shadow-2xl backdrop-blur-2xl flex flex-col gap-0.5">
                         <button onclick="selectLang('uz')" class="flex items-center justify-between w-full px-2.5 py-1.5 rounded-xl text-xs font-semibold hover:bg-white/15 transition text-left">
-                            <span class="flex items-center gap-2"><span>🇺🇿</span> <span>O'zbekcha</span></span>
+                            <span class="flex items-center gap-2 font-bold text-white"><span class="text-sky-300 font-mono text-[10px] px-1 py-0.5 bg-white/10 rounded">UZ</span> <span>O'zbekcha</span></span>
                             <span id="checkUz" class="text-sky-300 font-bold">✓</span>
                         </button>
                         <button onclick="selectLang('ru')" class="flex items-center justify-between w-full px-2.5 py-1.5 rounded-xl text-xs font-semibold hover:bg-white/15 transition text-left">
-                            <span class="flex items-center gap-2"><span>🇷🇺</span> <span>Русский</span></span>
+                            <span class="flex items-center gap-2 font-bold text-white"><span class="text-sky-300 font-mono text-[10px] px-1 py-0.5 bg-white/10 rounded">RU</span> <span>Русский</span></span>
                             <span id="checkRu" class="text-sky-300 font-bold hidden">✓</span>
                         </button>
                         <button onclick="selectLang('en')" class="flex items-center justify-between w-full px-2.5 py-1.5 rounded-xl text-xs font-semibold hover:bg-white/15 transition text-left">
-                            <span class="flex items-center gap-2"><span>🇬🇧</span> <span>English</span></span>
+                            <span class="flex items-center gap-2 font-bold text-white"><span class="text-sky-300 font-mono text-[10px] px-1 py-0.5 bg-white/10 rounded">EN</span> <span>English</span></span>
                             <span id="checkEn" class="text-sky-300 font-bold hidden">✓</span>
                         </button>
                     </div>
@@ -556,7 +491,7 @@ def _build_miniapp_html() -> str:
             <div class="flex items-center justify-between pb-3 border-b border-white/10">
                 <div class="flex items-center gap-2">
                     <span class="w-4 h-4 text-emerald-400 flex items-center justify-center flex-shrink-0">
-                        <svg viewBox="0 0 24 24" fill="none" class="w-full h-full"><path d="M4 20 C6 14 11 9 19 5 C19 13 14 18 8 20 Z" fill="url(#gradLeafWidget)" stroke="#10B981" stroke-width="1.5"/><path d="M7 17 C10 13 13 10 17 7" stroke="#FFFFFF" stroke-width="1.3" stroke-linecap="round" opacity="0.8"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" class="w-full h-full"><path d="M4 20 C6 14 11 9 19 5 C19 13 14 18 8 20 Z" fill="#10B981" stroke="#34D399" stroke-width="1.5"/><path d="M7 17 C10 13 13 10 17 7" stroke="#FFFFFF" stroke-width="1.3" stroke-linecap="round" opacity="0.8"/></svg>
                     </span>
                     <span class="text-xs uppercase tracking-wider font-bold text-white/80" id="tAqiTitle">Havo Sifati (AQI)</span>
                 </div>
@@ -672,7 +607,7 @@ def _build_miniapp_html() -> str:
             <div class="glass-card p-4 flex flex-col justify-between h-36">
                 <div class="flex items-center gap-1.5 text-xs font-semibold text-white/70 uppercase">
                     <span class="w-4 h-4 text-cyan-300 flex items-center justify-center flex-shrink-0">
-                        <svg viewBox="0 0 24 24" fill="none" class="w-full h-full"><path d="M12 2.5 C12 2.5 5 11 5 16 A 7 7 0 0 0 19 16 C19 11 12 2.5 12 2.5 Z" fill="url(#gradDropWidget)" stroke="#38BDF8" stroke-width="1.6"/><path d="M9 14.5 A 3.5 3.5 0 0 0 12 18" stroke="#FFFFFF" stroke-width="1.4" stroke-linecap="round" opacity="0.8"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" class="w-full h-full"><path d="M12 2.5 C12 2.5 5 11 5 16 A 7 7 0 0 0 19 16 C19 11 12 2.5 12 2.5 Z" fill="#0284C7" stroke="#38BDF8" stroke-width="1.6"/><path d="M9 14.5 A 3.5 3.5 0 0 0 12 18" stroke="#FFFFFF" stroke-width="1.4" stroke-linecap="round" opacity="0.8"/></svg>
                     </span>
                     <span id="tHumidityTitle">Namlik</span>
                 </div>
@@ -975,11 +910,11 @@ def _build_miniapp_html() -> str:
         // High-Precision SVG System (Apple Weather & SF Symbols inspired)
         const AppIcons = {
             wind: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full"><path d="M4 8h10.5a2.5 2.5 0 1 0-2.5-2.5"/><path d="M2 13h15.5a3 3 0 1 0-3-3"/><path d="M7 18h7a2 2 0 1 0-2-2"/></svg>`,
-            humidity: `<svg viewBox="0 0 24 24" fill="none" class="w-full h-full"><path d="M12 2.5 C12 2.5 5 11 5 16 A 7 7 0 0 0 19 16 C19 11 12 2.5 12 2.5 Z" fill="url(#gradDropWidget)" stroke="#38BDF8" stroke-width="1.6"/><path d="M9 14.5 A 3.5 3.5 0 0 0 12 18" stroke="#FFFFFF" stroke-width="1.4" stroke-linecap="round" opacity="0.8"/></svg>`,
+            humidity: `<svg viewBox="0 0 24 24" fill="none" class="w-full h-full"><path d="M12 2.5 C12 2.5 5 11 5 16 A 7 7 0 0 0 19 16 C19 11 12 2.5 12 2.5 Z" fill="#0284C7" stroke="#38BDF8" stroke-width="1.6"/><path d="M9 14.5 A 3.5 3.5 0 0 0 12 18" stroke="#FFFFFF" stroke-width="1.4" stroke-linecap="round" opacity="0.8"/></svg>`,
             uv: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>`,
             sun: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full"><path d="M3 18h18"/><path d="M7 18a5 5 0 0 1 10 0"/><path d="M12 7V4M17 9l2-2M7 9L5 7"/></svg>`,
             pressure: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 1.5"/><path d="M9 3h6"/></svg>`,
-            leaf: `<svg viewBox="0 0 24 24" fill="none" class="w-full h-full"><path d="M4 20 C6 14 11 9 19 5 C19 13 14 18 8 20 Z" fill="url(#gradLeafWidget)" stroke="#10B981" stroke-width="1.5"/><path d="M7 17 C10 13 13 10 17 7" stroke="#FFFFFF" stroke-width="1.3" stroke-linecap="round" opacity="0.8"/></svg>`,
+            leaf: `<svg viewBox="0 0 24 24" fill="none" class="w-full h-full"><path d="M4 20 C6 14 11 9 19 5 C19 13 14 18 8 20 Z" fill="#10B981" stroke="#34D399" stroke-width="1.5"/><path d="M7 17 C10 13 13 10 17 7" stroke="#FFFFFF" stroke-width="1.3" stroke-linecap="round" opacity="0.8"/></svg>`,
             clock: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>`,
             calendar: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full"><rect x="3" y="4" width="18" height="17" rx="3"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><circle cx="8" cy="14" r="1" fill="currentColor"/><circle cx="12" cy="14" r="1" fill="currentColor"/><circle cx="16" cy="14" r="1" fill="currentColor"/></svg>`,
             pin: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full"><path d="M12 21c-4-4.5-7-8.5-7-12a7 7 0 0 1 14 0c0 3.5-3 7.5-7 12z"/><circle cx="12" cy="9" r="2.5" fill="currentColor"/></svg>`,
@@ -995,12 +930,24 @@ def _build_miniapp_html() -> str:
             dropSmall: `<svg viewBox="0 0 16 16" fill="currentColor" class="w-2.5 h-2.5 inline-block"><path d="M8 2 C8 2 3.5 7.5 3.5 11 A 4.5 4.5 0 0 0 12.5 11 C12.5 7.5 8 2 8 2 Z"/></svg>`,
         };
 
-        // Volumetric 3D Weather Illustrations (Glow & High-Detail Shading)
+        // Volumetric 3D Weather Illustrations (Self-contained SVG system)
         const WeatherIcons = {
             clearDay: (cls) => `
                 <svg viewBox="0 0 64 64" fill="none" class="${cls}">
-                    <circle cx="32" cy="32" r="28" fill="url(#gradSunCorona)"/>
-                    <g stroke="#F59E0B" stroke-width="3" stroke-linecap="round" opacity="0.85">
+                    <defs>
+                        <radialGradient id="cd_sun" cx="35%" cy="35%" r="65%">
+                            <stop offset="0%" stop-color="#FFF7B2"/>
+                            <stop offset="35%" stop-color="#FBBF24"/>
+                            <stop offset="80%" stop-color="#F59E0B"/>
+                            <stop offset="100%" stop-color="#D97706"/>
+                        </radialGradient>
+                        <radialGradient id="cd_corona" cx="50%" cy="50%" r="50%">
+                            <stop offset="50%" stop-color="#F59E0B" stop-opacity="0.35"/>
+                            <stop offset="100%" stop-color="#F59E0B" stop-opacity="0"/>
+                        </radialGradient>
+                    </defs>
+                    <circle cx="32" cy="32" r="28" fill="url(#cd_corona)"/>
+                    <g stroke="#F59E0B" stroke-width="3" stroke-linecap="round" opacity="0.9">
                         <line x1="32" y1="8" x2="32" y2="3"/>
                         <line x1="32" y1="61" x2="32" y2="56"/>
                         <line x1="8" y1="32" x2="3" y2="32"/>
@@ -1010,18 +957,29 @@ def _build_miniapp_html() -> str:
                         <line x1="15" y1="49" x2="11" y2="53"/>
                         <line x1="53" y1="11" x2="49" y2="15"/>
                     </g>
-                    <circle cx="32" cy="32" r="18" fill="url(#gradSun)" filter="drop-shadow(0 4px 10px rgba(245,158,11,0.5))"/>
+                    <circle cx="32" cy="32" r="18" fill="url(#cd_sun)" filter="drop-shadow(0 4px 10px rgba(245,158,11,0.5))"/>
                     <path d="M23 21 A 12 12 0 0 1 38 20" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" opacity="0.65"/>
                 </svg>`,
 
             clearNight: (cls) => `
                 <svg viewBox="0 0 64 64" fill="none" class="${cls}">
-                    <circle cx="32" cy="32" r="26" fill="url(#gradMoonGlow)"/>
+                    <defs>
+                        <linearGradient id="cn_moon" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#FEF08A"/>
+                            <stop offset="50%" stop-color="#FCD34D"/>
+                            <stop offset="100%" stop-color="#F59E0B"/>
+                        </linearGradient>
+                        <radialGradient id="cn_glow" cx="45%" cy="45%" r="55%">
+                            <stop offset="0%" stop-color="#FDE047" stop-opacity="0.35"/>
+                            <stop offset="100%" stop-color="#FDE047" stop-opacity="0"/>
+                        </radialGradient>
+                    </defs>
+                    <circle cx="32" cy="32" r="26" fill="url(#cn_glow)"/>
                     <path d="M16 16 L17.5 20 L21.5 21.5 L17.5 23 L16 27 L14.5 23 L10.5 21.5 L14.5 20 Z" fill="#FDE047" opacity="0.85"/>
                     <circle cx="48" cy="18" r="1.5" fill="#FEF08A" opacity="0.9"/>
                     <circle cx="18" cy="46" r="1.5" fill="#FEF08A" opacity="0.7"/>
                     <path d="M38 12 C24 13 14 24 14 38 C14 49 22 57 33 58 C25 53 23 41 27 30 C30 22 36 16 45 14 C42.5 12.8 40.3 12.2 38 12 Z" 
-                          fill="url(#gradMoon)" filter="drop-shadow(0 4px 12px rgba(253, 224, 71, 0.45))"/>
+                          fill="url(#cn_moon)" filter="drop-shadow(0 4px 12px rgba(253, 224, 71, 0.45))"/>
                     <circle cx="25" cy="36" r="2" fill="#D97706" opacity="0.25"/>
                     <circle cx="28" cy="45" r="3" fill="#D97706" opacity="0.2"/>
                     <circle cx="32" cy="26" r="1.8" fill="#D97706" opacity="0.2"/>
@@ -1029,7 +987,20 @@ def _build_miniapp_html() -> str:
 
             partlyCloudyDay: (cls) => `
                 <svg viewBox="0 0 64 64" fill="none" class="${cls}">
-                    <circle cx="42" cy="24" r="13" fill="url(#gradSun)" filter="drop-shadow(0 2px 8px rgba(245,158,11,0.5))"/>
+                    <defs>
+                        <radialGradient id="pcd_sun" cx="35%" cy="35%" r="65%">
+                            <stop offset="0%" stop-color="#FFF7B2"/>
+                            <stop offset="40%" stop-color="#FBBF24"/>
+                            <stop offset="85%" stop-color="#F59E0B"/>
+                            <stop offset="100%" stop-color="#D97706"/>
+                        </radialGradient>
+                        <linearGradient id="pcd_cloud" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stop-color="#FFFFFF"/>
+                            <stop offset="65%" stop-color="#F1F5F9"/>
+                            <stop offset="100%" stop-color="#CBD5E1"/>
+                        </linearGradient>
+                    </defs>
+                    <circle cx="42" cy="24" r="13" fill="url(#pcd_sun)" filter="drop-shadow(0 2px 8px rgba(245,158,11,0.5))"/>
                     <g stroke="#F59E0B" stroke-width="2.2" stroke-linecap="round" opacity="0.85">
                         <line x1="42" y1="7" x2="42" y2="4"/>
                         <line x1="57" y1="17" x2="60" y2="15"/>
@@ -1037,46 +1008,91 @@ def _build_miniapp_html() -> str:
                         <line x1="54" y1="9" x2="56" y2="7"/>
                     </g>
                     <path d="M22 50 C15 50 10 45 10 39 C10 33.5 14 29 19.5 28.5 C21.5 21 28 16 35.5 16 C43.5 16 50 21.5 51.5 29 C56 30 59 34 59 39 C59 45 54 50 48 50 Z" 
-                          fill="url(#gradCloudFront)" filter="drop-shadow(0 6px 14px rgba(15,23,42,0.28))"/>
+                          fill="url(#pcd_cloud)" filter="drop-shadow(0 6px 14px rgba(15,23,42,0.28))"/>
                     <path d="M28 22 C32 19 39 19 43 23" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" opacity="0.8"/>
                     <path d="M14 36 C14 32 17 30 20 30" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" opacity="0.6"/>
                 </svg>`,
 
             partlyCloudyNight: (cls) => `
                 <svg viewBox="0 0 64 64" fill="none" class="${cls}">
+                    <defs>
+                        <linearGradient id="pcn_moon" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#FEF08A"/>
+                            <stop offset="50%" stop-color="#FCD34D"/>
+                            <stop offset="100%" stop-color="#F59E0B"/>
+                        </linearGradient>
+                        <linearGradient id="pcn_cloud" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stop-color="#FFFFFF"/>
+                            <stop offset="65%" stop-color="#E2E8F0"/>
+                            <stop offset="100%" stop-color="#94A3B8"/>
+                        </linearGradient>
+                    </defs>
                     <path d="M43 14 C35 15 29 21 29 29 C29 34 31 38 35 41 C31 38 30 31 33 24 C35 19 39 15 45 14 Z" 
-                          fill="url(#gradMoon)" filter="drop-shadow(0 2px 8px rgba(253,224,71,0.4))"/>
+                          fill="url(#pcn_moon)" filter="drop-shadow(0 2px 8px rgba(253,224,71,0.4))"/>
                     <circle cx="50" cy="18" r="1.5" fill="#FEF08A" opacity="0.85"/>
                     <path d="M22 50 C15 50 10 45 10 39 C10 33.5 14 29 19.5 28.5 C21.5 21 28 16 35.5 16 C43.5 16 50 21.5 51.5 29 C56 30 59 34 59 39 C59 45 54 50 48 50 Z" 
-                          fill="url(#gradCloudFront)" filter="drop-shadow(0 6px 14px rgba(15,23,42,0.35))"/>
+                          fill="url(#pcn_cloud)" filter="drop-shadow(0 6px 14px rgba(15,23,42,0.35))"/>
                     <path d="M28 22 C32 19 39 19 43 23" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
                 </svg>`,
 
             cloudy: (cls) => `
                 <svg viewBox="0 0 64 64" fill="none" class="${cls}">
+                    <defs>
+                        <linearGradient id="c_back" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stop-color="#CBD5E1"/>
+                            <stop offset="100%" stop-color="#64748B"/>
+                        </linearGradient>
+                        <linearGradient id="c_front" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stop-color="#FFFFFF"/>
+                            <stop offset="65%" stop-color="#F1F5F9"/>
+                            <stop offset="100%" stop-color="#CBD5E1"/>
+                        </linearGradient>
+                    </defs>
                     <path d="M30 40 C25 40 21 36 21 32 C21 27.5 24 24 28.5 23.5 C30 18 35 14 41 14 C47.5 14 53 18.5 54 24.5 C58 25.5 60 28.5 60 32.5 C60 37 56 40 51 40 Z" 
-                          fill="url(#gradCloudBack)" opacity="0.9"/>
+                          fill="url(#c_back)" opacity="0.9"/>
                     <path d="M18 52 C12 52 8 47.5 8 42 C8 37 12 33 16.5 32.5 C18.5 25.5 24.5 21 31.5 21 C39 21 45 26 46.5 32.5 C50.5 33.5 53 37 53 41.5 C53 47 48.5 52 43 52 Z" 
-                          fill="url(#gradCloudFront)" filter="drop-shadow(0 6px 14px rgba(15,23,42,0.3))"/>
+                          fill="url(#c_front)" filter="drop-shadow(0 6px 14px rgba(15,23,42,0.3))"/>
                     <path d="M25 26 C28 24 34 24 38 27" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" opacity="0.75"/>
                 </svg>`,
 
             rainLight: (cls) => `
                 <svg viewBox="0 0 64 64" fill="none" class="${cls}">
+                    <defs>
+                        <linearGradient id="rl_cloud" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stop-color="#FFFFFF"/>
+                            <stop offset="65%" stop-color="#F1F5F9"/>
+                            <stop offset="100%" stop-color="#CBD5E1"/>
+                        </linearGradient>
+                        <linearGradient id="rl_drop" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stop-color="#38BDF8"/>
+                            <stop offset="100%" stop-color="#0284C7"/>
+                        </linearGradient>
+                    </defs>
                     <path d="M20 42 C14 42 10 38 10 33 C10 28.5 13.5 25 18 24.5 C20 18 26 14 32.5 14 C39.5 14 45 18.5 46.5 24.5 C50.5 25.5 53 28.5 53 33 C53 38 49 42 43.5 42 Z" 
-                          fill="url(#gradCloudFront)" filter="drop-shadow(0 4px 10px rgba(15,23,42,0.25))"/>
+                          fill="url(#rl_cloud)" filter="drop-shadow(0 4px 10px rgba(15,23,42,0.25))"/>
                     <path d="M26 19 C29 17 35 17 38 20" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" opacity="0.75"/>
-                    <path d="M20 47 C20 45 22 43 22 43 C22 43 24 45 24 47 C24 48.5 23 50 22 50 C21 50 20 48.5 20 47 Z" fill="url(#gradRainDrop)"/>
-                    <path d="M31 50 C31 48 33 46 33 46 C33 46 35 48 35 50 C35 51.5 34 53 33 53 C32 53 31 51.5 31 50 Z" fill="url(#gradRainDrop)"/>
-                    <path d="M42 46 C42 44 44 42 44 42 C44 42 46 44 46 46 C46 47.5 45 49 44 49 C43 49 42 47.5 42 46 Z" fill="url(#gradRainDrop)"/>
+                    <path d="M20 47 C20 45 22 43 22 43 C22 43 24 45 24 47 C24 48.5 23 50 22 50 C21 50 20 48.5 20 47 Z" fill="url(#rl_drop)"/>
+                    <path d="M31 50 C31 48 33 46 33 46 C33 46 35 48 35 50 C35 51.5 34 53 33 53 C32 53 31 51.5 31 50 Z" fill="url(#rl_drop)"/>
+                    <path d="M42 46 C42 44 44 42 44 42 C44 42 46 44 46 46 C46 47.5 45 49 44 49 C43 49 42 47.5 42 46 Z" fill="url(#rl_drop)"/>
                 </svg>`,
 
             rainHeavy: (cls) => `
                 <svg viewBox="0 0 64 64" fill="none" class="${cls}">
+                    <defs>
+                        <linearGradient id="rh_cloud" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stop-color="#64748B"/>
+                            <stop offset="60%" stop-color="#334155"/>
+                            <stop offset="100%" stop-color="#1E293B"/>
+                        </linearGradient>
+                        <linearGradient id="rh_streak" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stop-color="#38BDF8"/>
+                            <stop offset="100%" stop-color="#0284C7"/>
+                        </linearGradient>
+                    </defs>
                     <path d="M20 38 C14 38 10 34 10 29 C10 24.5 13.5 21 18 20.5 C20 14 26 10 32.5 10 C39.5 10 45 14.5 46.5 20.5 C50.5 21.5 53 24.5 53 29 C53 34 49 38 43.5 38 Z" 
-                          fill="url(#gradCloudDark)" filter="drop-shadow(0 5px 12px rgba(15,23,42,0.4))"/>
+                          fill="url(#rh_cloud)" filter="drop-shadow(0 5px 12px rgba(15,23,42,0.4))"/>
                     <path d="M26 15 C29 13 35 13 38 16" stroke="#CBD5E1" stroke-width="1.8" stroke-linecap="round" opacity="0.6"/>
-                    <g stroke="url(#gradRainDrop)" stroke-width="2.5" stroke-linecap="round">
+                    <g stroke="url(#rh_streak)" stroke-width="2.5" stroke-linecap="round">
                         <line x1="18" y1="44" x2="14" y2="54"/>
                         <line x1="26" y1="44" x2="22" y2="56"/>
                         <line x1="34" y1="44" x2="30" y2="56"/>
@@ -1087,19 +1103,38 @@ def _build_miniapp_html() -> str:
 
             thunderstorm: (cls) => `
                 <svg viewBox="0 0 64 64" fill="none" class="${cls}">
+                    <defs>
+                        <linearGradient id="ts_cloud" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stop-color="#64748B"/>
+                            <stop offset="60%" stop-color="#334155"/>
+                            <stop offset="100%" stop-color="#1E293B"/>
+                        </linearGradient>
+                        <linearGradient id="ts_bolt" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#FEF08A"/>
+                            <stop offset="50%" stop-color="#FACC15"/>
+                            <stop offset="100%" stop-color="#EAB308"/>
+                        </linearGradient>
+                    </defs>
                     <path d="M20 36 C14 36 10 32 10 27 C10 22.5 13.5 19 18 18.5 C20 12 26 8 32.5 8 C39.5 8 45 12.5 46.5 18.5 C50.5 19.5 53 22.5 53 27 C53 32 49 36 43.5 36 Z" 
-                          fill="url(#gradCloudDark)" filter="drop-shadow(0 6px 14px rgba(15,23,42,0.5))"/>
+                          fill="url(#ts_cloud)" filter="drop-shadow(0 6px 14px rgba(15,23,42,0.5))"/>
                     <path d="M26 13 C29 11 35 11 38 14" stroke="#94A3B8" stroke-width="1.8" stroke-linecap="round" opacity="0.6"/>
                     <polygon points="34,25 23,39 30,39 26,56 41,36 33,36 38,25" 
-                             fill="url(#gradLightning)" filter="drop-shadow(0 0 6px rgba(250,204,21,0.85))"/>
+                             fill="url(#ts_bolt)" filter="drop-shadow(0 0 6px rgba(250,204,21,0.85))"/>
                     <line x1="15" y1="44" x2="12" y2="52" stroke="#38BDF8" stroke-width="2" stroke-linecap="round"/>
                     <line x1="48" y1="43" x2="45" y2="51" stroke="#38BDF8" stroke-width="2" stroke-linecap="round"/>
                 </svg>`,
 
             snow: (cls) => `
                 <svg viewBox="0 0 64 64" fill="none" class="${cls}">
+                    <defs>
+                        <linearGradient id="sn_cloud" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stop-color="#FFFFFF"/>
+                            <stop offset="65%" stop-color="#F1F5F9"/>
+                            <stop offset="100%" stop-color="#CBD5E1"/>
+                        </linearGradient>
+                    </defs>
                     <path d="M20 38 C14 38 10 34 10 29 C10 24.5 13.5 21 18 20.5 C20 14 26 10 32.5 10 C39.5 10 45 14.5 46.5 20.5 C50.5 21.5 53 24.5 53 29 C53 34 49 38 43.5 38 Z" 
-                          fill="url(#gradCloudFront)" filter="drop-shadow(0 4px 12px rgba(15,23,42,0.25))"/>
+                          fill="url(#sn_cloud)" filter="drop-shadow(0 4px 12px rgba(15,23,42,0.25))"/>
                     <path d="M26 15 C29 13 35 13 38 16" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" opacity="0.8"/>
                     <g stroke="#BAE6FD" stroke-width="2" stroke-linecap="round">
                         <g transform="translate(32, 48)">
@@ -1126,10 +1161,24 @@ def _build_miniapp_html() -> str:
 
             fog: (cls) => `
                 <svg viewBox="0 0 64 64" fill="none" class="${cls}">
-                    <path d="M12 20 C18 16 26 24 34 20 C42 16 50 22 54 20" stroke="url(#gradFog1)" stroke-width="4" stroke-linecap="round"/>
-                    <path d="M8 29 C16 25 24 33 32 29 C40 25 48 31 56 29" stroke="url(#gradFog2)" stroke-width="4.5" stroke-linecap="round"/>
-                    <path d="M14 38 C20 34 28 42 36 38 C44 34 52 40 54 38" stroke="url(#gradFog1)" stroke-width="4" stroke-linecap="round"/>
-                    <path d="M10 47 C17 43 25 51 33 47 C41 43 49 49 55 47" stroke="url(#gradFog2)" stroke-width="4" stroke-linecap="round"/>
+                    <defs>
+                        <linearGradient id="fog_g1" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stop-color="#94A3B8" stop-opacity="0.2"/>
+                            <stop offset="35%" stop-color="#E2E8F0" stop-opacity="0.95"/>
+                            <stop offset="70%" stop-color="#CBD5E1" stop-opacity="0.9"/>
+                            <stop offset="100%" stop-color="#94A3B8" stop-opacity="0.2"/>
+                        </linearGradient>
+                        <linearGradient id="fog_g2" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stop-color="#94A3B8" stop-opacity="0.1"/>
+                            <stop offset="40%" stop-color="#FFFFFF" stop-opacity="0.95"/>
+                            <stop offset="75%" stop-color="#E2E8F0" stop-opacity="0.85"/>
+                            <stop offset="100%" stop-color="#94A3B8" stop-opacity="0.1"/>
+                        </linearGradient>
+                    </defs>
+                    <path d="M12 20 C18 16 26 24 34 20 C42 16 50 22 54 20" stroke="url(#fog_g1)" stroke-width="4" stroke-linecap="round"/>
+                    <path d="M8 29 C16 25 24 33 32 29 C40 25 48 31 56 29" stroke="url(#fog_g2)" stroke-width="4.5" stroke-linecap="round"/>
+                    <path d="M14 38 C20 34 28 42 36 38 C44 34 52 40 54 38" stroke="url(#fog_g1)" stroke-width="4" stroke-linecap="round"/>
+                    <path d="M10 47 C17 43 25 51 33 47 C41 43 49 49 55 47" stroke="url(#fog_g2)" stroke-width="4" stroke-linecap="round"/>
                 </svg>`,
 
             getAqiCenterLeaf: (color) => `
@@ -1378,11 +1427,8 @@ def _build_miniapp_html() -> str:
             }
 
             // Active lang dropdown button & checkmark update
-            const flags = { uz: '🇺🇿', ru: '🇷🇺', en: '🇬🇧' };
             const labels = { uz: 'UZ', ru: 'RU', en: 'EN' };
-            const flagEl = document.getElementById('currentLangFlag');
             const labelEl = document.getElementById('currentLangLabel');
-            if (flagEl) flagEl.textContent = flags[currentLang] || '🇺🇿';
             if (labelEl) labelEl.textContent = labels[currentLang] || 'UZ';
 
             ['uz', 'ru', 'en'].forEach(l => {
