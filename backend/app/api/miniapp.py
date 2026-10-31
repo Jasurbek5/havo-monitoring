@@ -745,17 +745,11 @@ def _build_miniapp_html() -> str:
 
             <!-- EkoRadar Status Card -->
             <div class="glass-card p-4 flex flex-col justify-between h-36">
-                <div class="flex items-center justify-between text-xs font-semibold text-white/70 uppercase">
-                    <div class="flex items-center gap-1.5">
-                        <span class="w-4 h-4 text-emerald-400 flex items-center justify-center flex-shrink-0">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full"><circle cx="12" cy="12" r="9"/><path d="M12 3a14.5 14.5 0 0 1 0 18a14.5 14.5 0 0 1 0-18z"/></svg>
-                        </span>
-                        <span id="botTitle">EkoRadar</span>
-                    </div>
-                    <span class="inline-flex items-center gap-1 text-[10px] text-emerald-300 font-bold bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-400/30">
-                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                        <span id="lblLiveStatus">Jonli</span>
+                <div class="flex items-center gap-1.5 text-xs font-semibold text-white/70 uppercase">
+                    <span class="w-4 h-4 text-emerald-400 flex items-center justify-center flex-shrink-0">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full"><circle cx="12" cy="12" r="9"/><path d="M12 3a14.5 14.5 0 0 1 0 18a14.5 14.5 0 0 1 0-18z"/></svg>
                     </span>
+                    <span id="botTitle">EkoRadar</span>
                 </div>
                 <div>
                     <div class="text-sm font-bold" id="botSubtitle">AQI va Ob-havo</div>
@@ -1327,7 +1321,6 @@ def _build_miniapp_html() -> str:
                 botTitle: "EkoRadar",
                 botSubtitle: "AQI va Ob-havo",
                 botDesc: "Avtomatlashtirilgan monitoring tizimi",
-                lblLiveStatus: "Jonli",
                 lblLoadingIndicator: "Yangilanmoqda...",
                 close: "Yopish ✕",
                 now: "Hozir",
@@ -1390,7 +1383,6 @@ def _build_miniapp_html() -> str:
                 botTitle: "EkoRadar",
                 botSubtitle: "AQI и Погода",
                 botDesc: "Автоматизированный мониторинг",
-                lblLiveStatus: "В сети",
                 lblLoadingIndicator: "Обновление...",
                 close: "Закрыть ✕",
                 now: "Сейчас",
@@ -1453,7 +1445,6 @@ def _build_miniapp_html() -> str:
                 botTitle: "EkoRadar",
                 botSubtitle: "AQI & Weather",
                 botDesc: "Automated monitoring system",
-                lblLiveStatus: "Live",
                 lblLoadingIndicator: "Updating...",
                 close: "Close ✕",
                 now: "Now",
@@ -1522,7 +1513,6 @@ def _build_miniapp_html() -> str:
             setText('botTitle', t.botTitle);
             setText('botSubtitle', t.botSubtitle);
             setText('botDesc', t.botDesc);
-            setText('lblLiveStatus', t.lblLiveStatus);
             setText('lblLoadingIndicatorText', t.lblLoadingIndicator);
             setText('btnClose', t.close);
             setText('badgePm25', t.epaBadge);
