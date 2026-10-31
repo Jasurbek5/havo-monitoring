@@ -537,14 +537,14 @@ def _build_miniapp_html() -> str:
                         <div class="text-white/60 font-semibold">PM2.5</div>
                         <div id="valPm25" class="text-base font-bold text-white mt-0.5">-- <span class="text-[10px] text-white/60 font-normal">µg/m³</span></div>
                     </div>
-                    <span class="text-xs px-2 py-0.5 rounded-md bg-white/10 text-white/80" id="badgePm25">EPA standard</span>
+                    <span class="text-[10px] font-semibold tracking-wider px-2 py-0.5 rounded bg-white/10 text-white/60 uppercase" id="badgePm25">EPA</span>
                 </div>
                 <div class="bg-black/15 rounded-xl p-2.5 flex items-center justify-between">
                     <div>
                         <div class="text-white/60 font-semibold">PM10</div>
                         <div id="valPm10" class="text-base font-bold text-white mt-0.5">-- <span class="text-[10px] text-white/60 font-normal">µg/m³</span></div>
                     </div>
-                    <span class="text-xs px-2 py-0.5 rounded-md bg-white/10 text-white/80" id="badgePm10">EPA standard</span>
+                    <span class="text-[10px] font-semibold tracking-wider px-2 py-0.5 rounded bg-white/10 text-white/60 uppercase" id="badgePm10">EPA</span>
                 </div>
             </div>
         </section>
@@ -1275,7 +1275,7 @@ def _build_miniapp_html() -> str:
                 notFound: "Hudud topilmadi",
                 select: "Tanlash →",
                 updatedAt: "Yangilangan:",
-                epaBadge: "EPA standarti",
+                epaBadge: "EPA",
                 loading: "Yuklanmoqda...",
                 analyzingAir: "Havo ma'lumotlari tahlil qilinmoqda...",
                 settingsTitle: "Sozlamalar va Bildirishnomalar",
@@ -1331,7 +1331,7 @@ def _build_miniapp_html() -> str:
                 notFound: "Район не найден",
                 select: "Выбрать →",
                 updatedAt: "Обновлено:",
-                epaBadge: "Стандарт EPA",
+                epaBadge: "EPA",
                 loading: "Загрузка...",
                 analyzingAir: "Анализ качества воздуха...",
                 settingsTitle: "Настройки и уведомления",
@@ -1387,7 +1387,7 @@ def _build_miniapp_html() -> str:
                 notFound: "District not found",
                 select: "Select →",
                 updatedAt: "Updated:",
-                epaBadge: "EPA standard",
+                epaBadge: "EPA",
                 loading: "Loading...",
                 analyzingAir: "Analyzing air quality...",
                 settingsTitle: "Settings & Notifications",
