@@ -59,11 +59,9 @@ async def my_district(message: Message, state: FSMContext, user: User, lang: str
 
 @router.message(F.text.in_(all_translations("btn_choose_list")))
 async def choose_from_list(
-    message: Message, state: FSMContext, session: AsyncSession, lang: str
+    message: Message, state: FSMContext, lang: str
 ) -> None:
-    await safe_delete_message(message)
-    await state.clear()
-    await send_district_list(message, session, lang, mode="set")
+    await start_city_search(message, state, lang)
 
 
 @router.message(F.text.in_(all_translations("btn_search_city")))
@@ -166,6 +164,16 @@ async def pick_search_result(
     )
 
     district = await get_or_create_district_by_location(session, loc)
+    target_mode = data.get("target_mode")
+    if target_mode == "set_home":
+        user.home_district_id = district.id
+        await state.clear()
+        await safe_delete_message(call.message)
+        await call.message.answer(
+            t(lang, "home_district_set", name=district.name(lang)), reply_markup=main_menu_kb(lang)
+        )
+        return
+
     is_first = user.home_district_id is None
     user.district_id = district.id
     if is_first:

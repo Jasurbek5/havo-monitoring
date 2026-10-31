@@ -47,10 +47,7 @@ def district_prompt_kb(lang: str) -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text=t(lang, "btn_send_location"), request_location=True)],
-            [
-                KeyboardButton(text=t(lang, "btn_search_city")),
-                KeyboardButton(text=t(lang, "btn_choose_list")),
-            ],
+            [KeyboardButton(text=t(lang, "btn_search_city"))],
             [KeyboardButton(text=t(lang, "btn_cancel"))],
         ],
         resize_keyboard=True,
@@ -135,12 +132,12 @@ def air_kb(
                 _btn(switch_label, f"air:switch:{switch_district.id}"),
             ]
         )
-        rows.append([_btn(t(lang, "btn_all_districts"), "air:other")])
+        rows.append([_btn(t(lang, "btn_search_city"), "air:search")])
     else:
         rows.append(
             [
                 _btn(t(lang, "btn_refresh"), f"air:refresh:{district_id}"),
-                _btn(t(lang, "btn_other_district"), "air:other"),
+                _btn(t(lang, "btn_search_city"), "air:search"),
             ]
         )
     return _inline(rows)
@@ -175,11 +172,11 @@ def today_weather_kb(
         rows.append(
             [
                 _btn(switch_label, f"weather:today:{switch_district.id}"),
-                _btn(t(lang, "btn_all_districts"), "air:other"),
+                _btn(t(lang, "btn_search_city"), "air:search"),
             ]
         )
     else:
-        rows.append([_btn(t(lang, "btn_other_district"), "air:other")])
+        rows.append([_btn(t(lang, "btn_search_city"), "air:search")])
     return _inline(rows)
 
 
@@ -285,7 +282,7 @@ def home_settings_kb(user: User, lang: str) -> InlineKeyboardMarkup:
                 )
             ]
         )
-    rows.append([_btn(t(lang, "btn_choose_from_list"), "home:choose_list")])
+    rows.append([_btn(t(lang, "btn_search_city"), "home:search")])
     if user.home_district_id:
         rows.append([_btn(t(lang, "btn_clear_home"), "home:clear")])
     rows.append([_btn(t(lang, "btn_back"), "set:back")])

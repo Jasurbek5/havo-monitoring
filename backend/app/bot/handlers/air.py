@@ -9,9 +9,9 @@ from aiogram.types import CallbackQuery, Message
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.bot.handlers.districts import send_district_list
 from app.bot.helpers import safe_delete_message
 from app.bot.keyboards import air_kb, district_prompt_kb, today_weather_kb, weekly_weather_kb
+from app.bot.states import LocationSearchForm
 from app.config import Settings
 from app.core.i18n import all_translations, t
 from app.core.messages import (
@@ -361,13 +361,14 @@ async def view_weekly_weather(
             raise
 
 
-@router.callback_query(F.data == "air:other")
-async def pick_other_district(call: CallbackQuery, session: AsyncSession, lang: str) -> None:
-    if not isinstance(call.message, Message):
-        await call.answer()
-        return
-    await send_district_list(call.message, session, lang, mode="view")
+@router.callback_query(F.data.in_({"air:search", "air:other"}))
+async def search_other_district(call: CallbackQuery, state: FSMContext, lang: str) -> None:
     await call.answer()
+    if not isinstance(call.message, Message):
+        return
+    await state.set_state(LocationSearchForm.waiting_for_query)
+    prompt_msg = await call.message.answer(t(lang, "ask_search_city"))
+    await state.update_data(prompt_msg_id=prompt_msg.message_id)
 
 
 @router.callback_query(F.data.startswith("dist:view:"))

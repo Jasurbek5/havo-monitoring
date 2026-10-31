@@ -5,7 +5,6 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.bot.handlers.districts import send_district_list
 from app.bot.helpers import safe_delete_message
 from app.bot.keyboards import (
     digest_time_kb,
@@ -15,6 +14,7 @@ from app.bot.keyboards import (
     timezone_display_name,
     timezone_kb,
 )
+from app.bot.states import LocationSearchForm
 from app.core.i18n import all_translations, t
 from app.models import User
 
@@ -140,14 +140,17 @@ async def clear_home_district(call: CallbackQuery, user: User, lang: str) -> Non
         )
 
 
-@router.callback_query(F.data == "home:choose_list")
-async def choose_home_from_list(
-    call: CallbackQuery, session: AsyncSession, lang: str
+@router.callback_query(F.data.in_({"home:search", "home:choose_list"}))
+async def choose_home_from_search(
+    call: CallbackQuery, state: FSMContext, lang: str
 ) -> None:
-    """Uy hududini ro'yxatdan tanlash."""
+    """Uy hududini qidiruv orqali tanlash."""
     await call.answer()
     if isinstance(call.message, Message):
-        await send_district_list(call.message, session, lang, mode="set_home")
+        await state.set_state(LocationSearchForm.waiting_for_query)
+        await state.update_data(target_mode="set_home")
+        prompt_msg = await call.message.answer(t(lang, "ask_search_city"))
+        await state.update_data(prompt_msg_id=prompt_msg.message_id)
 
 
 @router.callback_query(F.data == "set:back")
