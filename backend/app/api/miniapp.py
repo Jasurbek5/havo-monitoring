@@ -398,6 +398,80 @@ def _build_miniapp_html() -> str:
 </head>
 <body class="theme-clear-day text-white antialiased pb-12 transition-all">
 
+    <!-- Global Master SVG Definitions (Shared Gradients & Filters for Maximum Performance) -->
+    <svg style="display:none;" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <!-- 3D Sun Gradients -->
+            <radialGradient id="gradSun" cx="35%" cy="35%" r="65%">
+                <stop offset="0%" stop-color="#FFF7B2"/>
+                <stop offset="40%" stop-color="#FBBF24"/>
+                <stop offset="85%" stop-color="#F59E0B"/>
+                <stop offset="100%" stop-color="#D97706"/>
+            </radialGradient>
+            <radialGradient id="gradSunCorona" cx="50%" cy="50%" r="50%">
+                <stop offset="60%" stop-color="#F59E0B" stop-opacity="0.35"/>
+                <stop offset="100%" stop-color="#F59E0B" stop-opacity="0"/>
+            </radialGradient>
+            <!-- 3D Moon Gradients -->
+            <linearGradient id="gradMoon" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#FEF08A"/>
+                <stop offset="50%" stop-color="#FCD34D"/>
+                <stop offset="100%" stop-color="#F59E0B"/>
+            </linearGradient>
+            <radialGradient id="gradMoonGlow" cx="45%" cy="45%" r="55%">
+                <stop offset="0%" stop-color="#FDE047" stop-opacity="0.35"/>
+                <stop offset="100%" stop-color="#FDE047" stop-opacity="0"/>
+            </radialGradient>
+            <!-- 3D Cloud Gradients -->
+            <linearGradient id="gradCloudFront" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#FFFFFF"/>
+                <stop offset="65%" stop-color="#F1F5F9"/>
+                <stop offset="100%" stop-color="#CBD5E1"/>
+            </linearGradient>
+            <linearGradient id="gradCloudBack" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#CBD5E1"/>
+                <stop offset="100%" stop-color="#64748B"/>
+            </linearGradient>
+            <linearGradient id="gradCloudDark" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#64748B"/>
+                <stop offset="60%" stop-color="#334155"/>
+                <stop offset="100%" stop-color="#1E293B"/>
+            </linearGradient>
+            <!-- Rain & Lightning Gradients -->
+            <linearGradient id="gradRainDrop" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#38BDF8"/>
+                <stop offset="100%" stop-color="#0284C7"/>
+            </linearGradient>
+            <linearGradient id="gradLightning" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#FEF08A"/>
+                <stop offset="50%" stop-color="#FACC15"/>
+                <stop offset="100%" stop-color="#EAB308"/>
+            </linearGradient>
+            <!-- Fog Waves Gradients -->
+            <linearGradient id="gradFog1" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#94A3B8" stop-opacity="0.2"/>
+                <stop offset="35%" stop-color="#E2E8F0" stop-opacity="0.95"/>
+                <stop offset="65%" stop-color="#F1F5F9" stop-opacity="0.95"/>
+                <stop offset="100%" stop-color="#94A3B8" stop-opacity="0.2"/>
+            </linearGradient>
+            <linearGradient id="gradFog2" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#64748B" stop-opacity="0.2"/>
+                <stop offset="35%" stop-color="#CBD5E1" stop-opacity="0.85"/>
+                <stop offset="65%" stop-color="#E2E8F0" stop-opacity="0.85"/>
+                <stop offset="100%" stop-color="#64748B" stop-opacity="0.2"/>
+            </linearGradient>
+            <!-- Widget Gradients -->
+            <linearGradient id="gradDropWidget" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#38BDF8"/>
+                <stop offset="100%" stop-color="#0284C7"/>
+            </linearGradient>
+            <linearGradient id="gradLeafWidget" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#34D399"/>
+                <stop offset="100%" stop-color="#059669"/>
+            </linearGradient>
+        </defs>
+    </svg>
+
     <!-- Ambient Glow FX -->
     <div class="fixed inset-0 pointer-events-none overflow-hidden z-0">
         <div id="ambientGlow" class="absolute -top-32 left-1/2 -translate-x-1/2 w-96 h-96 bg-white/20 rounded-full blur-3xl transition-all duration-1000"></div>
@@ -410,12 +484,14 @@ def _build_miniapp_html() -> str:
         <header class="flex items-center justify-between pt-1">
             <!-- District Selector Button -->
             <button onclick="openDistrictModal()" class="glass-pill px-3.5 py-1.5 rounded-full flex items-center gap-2 active:scale-95 transition text-sm font-semibold shadow-sm">
-                <span class="text-base">📍</span>
+                <span class="w-4 h-4 text-rose-400 flex items-center justify-center flex-shrink-0">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full"><path d="M12 21c-4-4.5-7-8.5-7-12a7 7 0 0 1 14 0c0 3.5-3 7.5-7 12z"/><circle cx="12" cy="9" r="2.5" fill="currentColor"/></svg>
+                </span>
                 <span id="currentDistrictName">Yuklanmoqda...</span>
                 <svg class="w-4 h-4 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
             </button>
 
-            <!-- Actions: Lang Switcher & Refresh -->
+            <!-- Actions: Lang Switcher, Refresh & Settings -->
             <div class="flex items-center gap-2">
                 <!-- Language Selector Dropdown -->
                 <div class="relative" id="langMenuContainer">
@@ -445,8 +521,8 @@ def _build_miniapp_html() -> str:
                 </div>
 
                 <!-- Refresh Button -->
-                <button onclick="refreshData()" id="refreshBtn" class="glass-pill w-8 h-8 rounded-full flex items-center justify-center active:scale-90 transition">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                <button onclick="refreshData()" id="refreshBtn" class="glass-pill w-8 h-8 rounded-full flex items-center justify-center active:scale-90 transition" title="Yangilash">
+                    <svg class="w-4 h-4 text-white/90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                 </button>
 
                 <!-- Settings Button (refresh o'ng tomonida) -->
@@ -461,7 +537,9 @@ def _build_miniapp_html() -> str:
 
         <!-- Hero Weather Section -->
         <section class="text-center pt-2 pb-1 flex flex-col items-center">
-            <div id="weatherEmojiHero" class="text-6xl mb-1 filter drop-shadow-md select-none transform hover:scale-110 transition duration-300">☀️</div>
+            <div id="weatherIconHero" class="w-24 h-24 mb-1 filter drop-shadow-xl select-none transform hover:scale-105 transition-transform duration-300 flex items-center justify-center">
+                <!-- Dynamically populated 3D Weather Icon -->
+            </div>
             <h1 id="weatherTemp" class="text-7xl font-extrabold tracking-tight drop-shadow-sm font-sans flex items-start justify-center">
                 <span>--</span><span class="text-4xl font-normal mt-1 text-white/80">°</span>
             </h1>
@@ -477,7 +555,9 @@ def _build_miniapp_html() -> str:
         <section class="glass-card p-5 relative overflow-hidden">
             <div class="flex items-center justify-between pb-3 border-b border-white/10">
                 <div class="flex items-center gap-2">
-                    <span class="text-lg">🍃</span>
+                    <span class="w-4 h-4 text-emerald-400 flex items-center justify-center flex-shrink-0">
+                        <svg viewBox="0 0 24 24" fill="none" class="w-full h-full"><path d="M4 20 C6 14 11 9 19 5 C19 13 14 18 8 20 Z" fill="url(#gradLeafWidget)" stroke="#10B981" stroke-width="1.5"/><path d="M7 17 C10 13 13 10 17 7" stroke="#FFFFFF" stroke-width="1.3" stroke-linecap="round" opacity="0.8"/></svg>
+                    </span>
                     <span class="text-xs uppercase tracking-wider font-bold text-white/80" id="tAqiTitle">Havo Sifati (AQI)</span>
                 </div>
                 <div class="flex items-center gap-1.5 text-xs text-white/70">
@@ -507,7 +587,9 @@ def _build_miniapp_html() -> str:
                         <circle id="aqiProgressCircle" cx="50" cy="50" r="40" stroke="#22c55e" stroke-width="9" fill="none" stroke-linecap="round" stroke-dasharray="251.2" stroke-dashoffset="251.2" class="transition-all duration-1000 ease-out"></circle>
                     </svg>
                     <div class="absolute inset-0 flex flex-col items-center justify-center">
-                        <span id="aqiGaugeCenterEmoji" class="text-2xl">🟢</span>
+                        <div id="aqiGaugeCenterIcon" class="w-7 h-7 flex items-center justify-center filter drop-shadow">
+                            <!-- Dynamically colored AQI icon -->
+                        </div>
                         <span class="text-[9px] uppercase font-bold text-white/60 mt-0.5">AQI</span>
                     </div>
                 </div>
@@ -535,7 +617,9 @@ def _build_miniapp_html() -> str:
         <!-- 24-Hour Forecast (Hourly) -->
         <section class="glass-card p-4">
             <div class="flex items-center gap-2 pb-3 mb-1 text-xs uppercase tracking-wider font-bold text-white/80 border-b border-white/10">
-                <span>⏰</span>
+                <span class="w-4 h-4 text-sky-300 flex items-center justify-center flex-shrink-0">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
+                </span>
                 <span id="tHourlyTitle">24 Soatlik Prognoz</span>
             </div>
             <!-- Horizontal Carousel -->
@@ -552,7 +636,9 @@ def _build_miniapp_html() -> str:
         <!-- 7-Day Weekly Forecast -->
         <section class="glass-card p-4">
             <div class="flex items-center gap-2 pb-3 mb-2 text-xs uppercase tracking-wider font-bold text-white/80 border-b border-white/10">
-                <span>📅</span>
+                <span class="w-4 h-4 text-sky-300 flex items-center justify-center flex-shrink-0">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full"><rect x="3" y="4" width="18" height="17" rx="3"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><circle cx="8" cy="14" r="1" fill="currentColor"/><circle cx="12" cy="14" r="1" fill="currentColor"/><circle cx="16" cy="14" r="1" fill="currentColor"/></svg>
+                </span>
                 <span id="tWeeklyTitle">7 Kunlik Prognoz</span>
             </div>
             <div id="weeklyContainer" class="flex flex-col divide-y divide-white/10">
@@ -567,7 +653,10 @@ def _build_miniapp_html() -> str:
             <!-- Wind -->
             <div class="glass-card p-4 flex flex-col justify-between h-36">
                 <div class="flex items-center gap-1.5 text-xs font-semibold text-white/70 uppercase">
-                    <span>💨</span> <span id="tWindTitle">Shamol</span>
+                    <span class="w-4 h-4 text-sky-300 flex items-center justify-center flex-shrink-0">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full"><path d="M4 8h10.5a2.5 2.5 0 1 0-2.5-2.5"/><path d="M2 13h15.5a3 3 0 1 0-3-3"/><path d="M7 18h7a2 2 0 1 0-2-2"/></svg>
+                    </span>
+                    <span id="tWindTitle">Shamol</span>
                 </div>
                 <div>
                     <div class="text-2xl font-bold font-sans"><span id="valWindSpeed">--</span> <span class="text-xs font-normal text-white/70">m/s</span></div>
@@ -582,7 +671,10 @@ def _build_miniapp_html() -> str:
             <!-- Humidity -->
             <div class="glass-card p-4 flex flex-col justify-between h-36">
                 <div class="flex items-center gap-1.5 text-xs font-semibold text-white/70 uppercase">
-                    <span>💧</span> <span id="tHumidityTitle">Namlik</span>
+                    <span class="w-4 h-4 text-cyan-300 flex items-center justify-center flex-shrink-0">
+                        <svg viewBox="0 0 24 24" fill="none" class="w-full h-full"><path d="M12 2.5 C12 2.5 5 11 5 16 A 7 7 0 0 0 19 16 C19 11 12 2.5 12 2.5 Z" fill="url(#gradDropWidget)" stroke="#38BDF8" stroke-width="1.6"/><path d="M9 14.5 A 3.5 3.5 0 0 0 12 18" stroke="#FFFFFF" stroke-width="1.4" stroke-linecap="round" opacity="0.8"/></svg>
+                    </span>
+                    <span id="tHumidityTitle">Namlik</span>
                 </div>
                 <div>
                     <div class="text-2xl font-bold font-sans"><span id="valHumidity">--</span><span class="text-sm font-normal text-white/70">%</span></div>
@@ -596,7 +688,10 @@ def _build_miniapp_html() -> str:
             <!-- UV Index -->
             <div class="glass-card p-4 flex flex-col justify-between h-36">
                 <div class="flex items-center gap-1.5 text-xs font-semibold text-white/70 uppercase">
-                    <span>☀️</span> <span id="tUvTitle">UV Indeksi</span>
+                    <span class="w-4 h-4 text-amber-300 flex items-center justify-center flex-shrink-0">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+                    </span>
+                    <span id="tUvTitle">UV Indeksi</span>
                 </div>
                 <div>
                     <div class="text-2xl font-bold font-sans" id="valUv">--</div>
@@ -608,7 +703,10 @@ def _build_miniapp_html() -> str:
             <!-- Sun (Sunrise & Sunset) -->
             <div class="glass-card p-4 flex flex-col justify-between h-36">
                 <div class="flex items-center gap-1.5 text-xs font-semibold text-white/70 uppercase">
-                    <span>🌅</span> <span id="tSunTitle">Quyosh</span>
+                    <span class="w-4 h-4 text-amber-400 flex items-center justify-center flex-shrink-0">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full"><path d="M3 18h18"/><path d="M7 18a5 5 0 0 1 10 0"/><path d="M12 7V4M17 9l2-2M7 9L5 7"/></svg>
+                    </span>
+                    <span id="tSunTitle">Quyosh</span>
                 </div>
                 <div class="flex justify-between items-center text-xs">
                     <div>
@@ -629,7 +727,10 @@ def _build_miniapp_html() -> str:
             <!-- Pressure -->
             <div class="glass-card p-4 flex flex-col justify-between h-36">
                 <div class="flex items-center gap-1.5 text-xs font-semibold text-white/70 uppercase">
-                    <span>⏱</span> <span id="tPressureTitle">Bosim</span>
+                    <span class="w-4 h-4 text-violet-300 flex items-center justify-center flex-shrink-0">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 1.5"/><path d="M9 3h6"/></svg>
+                    </span>
+                    <span id="tPressureTitle">Bosim</span>
                 </div>
                 <div>
                     <div class="text-2xl font-bold font-sans"><span id="valPressureMmhg">--</span> <span class="text-xs font-normal text-white/70">mmHg</span></div>
@@ -641,7 +742,10 @@ def _build_miniapp_html() -> str:
             <!-- App Info / Telegram Bot -->
             <div class="glass-card p-4 flex flex-col justify-between h-36">
                 <div class="flex items-center gap-1.5 text-xs font-semibold text-white/70 uppercase">
-                    <span>📱</span> <span id="botTitle">Havo Bot</span>
+                    <span class="w-4 h-4 text-sky-300 flex items-center justify-center flex-shrink-0">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full"><rect x="5" y="4" width="14" height="16" rx="3"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/><path d="M9 14h6"/><path d="M12 1v3"/></svg>
+                    </span>
+                    <span id="botTitle">Havo Bot</span>
                 </div>
                 <div>
                     <div class="text-sm font-bold" id="botSubtitle">Toshkent & Viloyatlar</div>
@@ -661,7 +765,9 @@ def _build_miniapp_html() -> str:
             <!-- Modal Header -->
             <div class="flex items-center justify-between pb-3 border-b border-white/10">
                 <div class="flex items-center gap-2">
-                    <span class="text-xl">🏙</span>
+                    <span class="w-5 h-5 text-sky-400 flex items-center justify-center">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full"><path d="M3 21h18M5 21V7l8-4v18M13 10l6 3v8M9 9v.01M9 13v.01M9 17v.01M17 15v.01M17 18v.01"/></svg>
+                    </span>
                     <h3 class="text-base font-bold" id="tChooseDistrictModal">Hududni tanlang</h3>
                 </div>
                 <button onclick="closeDistrictModal()" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/70 active:scale-90 transition">✕</button>
@@ -679,7 +785,9 @@ def _build_miniapp_html() -> str:
             <div id="homeDistrictQuickCard" class="hidden mb-2">
                 <button onclick="selectHomeDistrict()" class="w-full text-left p-2.5 rounded-2xl bg-gradient-to-r from-sky-600/30 to-indigo-600/30 border border-sky-400/40 flex items-center justify-between active:scale-98 transition shadow-sm">
                     <div class="flex items-center gap-2.5">
-                        <span class="text-xl">🏠</span>
+                        <span class="w-5 h-5 text-amber-300 flex items-center justify-center flex-shrink-0">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full"><path d="M3 10.5L12 3l9 7.5V20a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-9.5z"/><path d="M9 22V12h6v10"/></svg>
+                        </span>
                         <div>
                             <div class="text-[10px] text-sky-300 font-bold uppercase tracking-wider" id="lblHomeDistrictBanner">Mening Uyim</div>
                             <div id="homeDistrictBannerName" class="text-sm font-bold text-white mt-0.5">Chilonzor</div>
@@ -714,7 +822,9 @@ def _build_miniapp_html() -> str:
             <!-- Modal Header -->
             <div class="flex items-center justify-between pb-3 border-b border-white/10">
                 <div class="flex items-center gap-2">
-                    <span class="text-xl">⚙️</span>
+                    <span class="w-5 h-5 text-sky-400 flex items-center justify-center">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                    </span>
                     <h3 class="text-base font-bold" id="tSettingsModalTitle">Sozlamalar</h3>
                 </div>
                 <button onclick="closeSettingsModal()" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/70 active:scale-90 transition">✕</button>
@@ -725,13 +835,21 @@ def _build_miniapp_html() -> str:
                 <!-- Section 1: Alerts & Digest -->
                 <div class="bg-white/5 border border-white/10 rounded-2xl p-3.5 flex flex-col gap-3">
                     <div class="text-xs uppercase tracking-wider font-bold text-white/70 flex items-center gap-1.5" id="tSectionAlerts">
-                        <span>🔔</span> <span id="tSectionAlertsText">Bildirishnomalar</span>
+                        <span class="w-4 h-4 text-sky-300 flex items-center justify-center">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                        </span>
+                        <span id="tSectionAlertsText">Bildirishnomalar</span>
                     </div>
 
                     <!-- Hazardous Air Alert Toggle -->
                     <div class="flex items-center justify-between pt-1">
                         <div class="pr-3">
-                            <div class="text-xs font-bold text-white/90" id="lblSettingAlert">🚨 Xavfli havo xabarlari</div>
+                            <div class="text-xs font-bold text-white/90 flex items-center gap-1.5">
+                                <span class="w-3.5 h-3.5 text-amber-400 flex items-center justify-center flex-shrink-0">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                                </span>
+                                <span id="lblSettingAlert">Xavfli havo xabarlari</span>
+                            </div>
                             <div class="text-[10px] text-white/60 leading-tight mt-0.5" id="lblSettingAlertDesc">AQI zararli darajaga yetganda avtomatik ogohlantirish</div>
                         </div>
                         <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
@@ -745,7 +863,12 @@ def _build_miniapp_html() -> str:
                     <!-- Daily Morning Digest Toggle -->
                     <div class="flex items-center justify-between">
                         <div class="pr-3">
-                            <div class="text-xs font-bold text-white/90" id="lblSettingDigest">☀️ Ertalabki xabar</div>
+                            <div class="text-xs font-bold text-white/90 flex items-center gap-1.5">
+                                <span class="w-3.5 h-3.5 text-amber-300 flex items-center justify-center flex-shrink-0">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+                                </span>
+                                <span id="lblSettingDigest">Ertalabki xabar</span>
+                            </div>
                             <div class="text-[10px] text-white/60 leading-tight mt-0.5" id="lblSettingDigestDesc">Har tong kungi ob-havo va havo sifati ma'lumoti</div>
                         </div>
                         <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
@@ -758,7 +881,10 @@ def _build_miniapp_html() -> str:
                 <!-- Section 2: Digest Schedule & Timezone -->
                 <div id="settingsScheduleSection" class="bg-white/5 border border-white/10 rounded-2xl p-3.5 flex flex-col gap-3 transition">
                     <div class="text-xs uppercase tracking-wider font-bold text-white/70 flex items-center gap-1.5" id="tSectionSchedule">
-                        <span>⏰</span> <span id="tSectionScheduleText">Vaqt va mintaqa</span>
+                        <span class="w-4 h-4 text-sky-300 flex items-center justify-center">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
+                        </span>
+                        <span id="tSectionScheduleText">Vaqt va mintaqa</span>
                     </div>
 
                     <!-- Time picker pills -->
@@ -795,7 +921,10 @@ def _build_miniapp_html() -> str:
                 <!-- Section 3: Home District -->
                 <div class="bg-white/5 border border-white/10 rounded-2xl p-3.5 flex flex-col gap-2.5">
                     <div class="text-xs uppercase tracking-wider font-bold text-white/70 flex items-center gap-1.5" id="tSectionHome">
-                        <span>🏠</span> <span id="tSectionHomeText">Asosiy uy hududi</span>
+                        <span class="w-4 h-4 text-amber-300 flex items-center justify-center">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full"><path d="M3 10.5L12 3l9 7.5V20a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-9.5z"/><path d="M9 22V12h6v10"/></svg>
+                        </span>
+                        <span id="tSectionHomeText">Asosiy uy hududi</span>
                     </div>
                     <div class="text-[10px] text-white/60 leading-relaxed" id="lblHomeDesc">
                         Boshqa shahar yoki viloyatga borganingizda ham ertalabki xabarlar va ogohlantirishlar aynan uy hududingiz bo'yicha yuboriladi.
@@ -805,11 +934,17 @@ def _build_miniapp_html() -> str:
                         <span id="settingsHomeName" class="text-xs font-bold text-sky-300">Chilonzor</span>
                     </div>
                     <div class="flex gap-2 pt-0.5">
-                        <button onclick="setHomeToCurrentDistrict()" class="flex-1 py-2 rounded-xl bg-sky-600/40 hover:bg-sky-600/60 border border-sky-400/40 text-xs font-bold text-white transition active:scale-95" id="btnSetCurrentAsHome">
-                            📍 Joriy hududni uy qilish
+                        <button onclick="setHomeToCurrentDistrict()" class="flex-1 py-2 rounded-xl bg-sky-600/40 hover:bg-sky-600/60 border border-sky-400/40 text-xs font-bold text-white transition active:scale-95 flex items-center justify-center gap-1.5" id="btnSetCurrentAsHome">
+                            <span class="w-3.5 h-3.5 text-rose-400 flex items-center justify-center flex-shrink-0">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full"><path d="M12 21c-4-4.5-7-8.5-7-12a7 7 0 0 1 14 0c0 3.5-3 7.5-7 12z"/><circle cx="12" cy="9" r="2.5" fill="currentColor"/></svg>
+                            </span>
+                            <span id="btnSetCurrentAsHomeText">Joriy hududni uy qilish</span>
                         </button>
-                        <button onclick="clearHomeDistrict()" class="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-xs text-white/70 transition active:scale-95" id="btnClearHome">
-                            🗑 O'chirish
+                        <button onclick="clearHomeDistrict()" class="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-xs text-white/70 transition active:scale-95 flex items-center justify-center gap-1.5" id="btnClearHome">
+                            <span class="w-3.5 h-3.5 text-rose-400 flex items-center justify-center flex-shrink-0">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                            </span>
+                            <span id="btnClearHomeText">O'chirish</span>
                         </button>
                     </div>
                 </div>
@@ -837,27 +972,187 @@ def _build_miniapp_html() -> str:
         let allDistricts = { city: [], regions: [], other: [] };
         let currentTab = 'city';
 
-        // Auto detect language from URL params or Telegram
-        const urlParams = new URLSearchParams(window.location.search);
-        const urlLang = urlParams.get('lang');
-        const urlDistId = urlParams.get('district_id');
+        // High-Precision SVG System (Apple Weather & SF Symbols inspired)
+        const AppIcons = {
+            wind: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full"><path d="M4 8h10.5a2.5 2.5 0 1 0-2.5-2.5"/><path d="M2 13h15.5a3 3 0 1 0-3-3"/><path d="M7 18h7a2 2 0 1 0-2-2"/></svg>`,
+            humidity: `<svg viewBox="0 0 24 24" fill="none" class="w-full h-full"><path d="M12 2.5 C12 2.5 5 11 5 16 A 7 7 0 0 0 19 16 C19 11 12 2.5 12 2.5 Z" fill="url(#gradDropWidget)" stroke="#38BDF8" stroke-width="1.6"/><path d="M9 14.5 A 3.5 3.5 0 0 0 12 18" stroke="#FFFFFF" stroke-width="1.4" stroke-linecap="round" opacity="0.8"/></svg>`,
+            uv: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>`,
+            sun: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full"><path d="M3 18h18"/><path d="M7 18a5 5 0 0 1 10 0"/><path d="M12 7V4M17 9l2-2M7 9L5 7"/></svg>`,
+            pressure: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 1.5"/><path d="M9 3h6"/></svg>`,
+            leaf: `<svg viewBox="0 0 24 24" fill="none" class="w-full h-full"><path d="M4 20 C6 14 11 9 19 5 C19 13 14 18 8 20 Z" fill="url(#gradLeafWidget)" stroke="#10B981" stroke-width="1.5"/><path d="M7 17 C10 13 13 10 17 7" stroke="#FFFFFF" stroke-width="1.3" stroke-linecap="round" opacity="0.8"/></svg>`,
+            clock: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>`,
+            calendar: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full"><rect x="3" y="4" width="18" height="17" rx="3"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><circle cx="8" cy="14" r="1" fill="currentColor"/><circle cx="12" cy="14" r="1" fill="currentColor"/><circle cx="16" cy="14" r="1" fill="currentColor"/></svg>`,
+            pin: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full"><path d="M12 21c-4-4.5-7-8.5-7-12a7 7 0 0 1 14 0c0 3.5-3 7.5-7 12z"/><circle cx="12" cy="9" r="2.5" fill="currentColor"/></svg>`,
+            home: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full"><path d="M3 10.5L12 3l9 7.5V20a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-9.5z"/><path d="M9 22V12h6v10"/></svg>`,
+            globe: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full"><circle cx="12" cy="12" r="9"/><line x1="3" y1="12" x2="21" y2="12"/><path d="M12 3a14.5 14.5 0 0 1 0 18a14.5 14.5 0 0 1 0-18z"/></svg>`,
+            gear: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`,
+            city: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full"><path d="M3 21h18M5 21V7l8-4v18M13 10l6 3v8M9 9v.01M9 13v.01M9 17v.01M17 15v.01M17 18v.01"/></svg>`,
+            bot: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full"><rect x="5" y="4" width="14" height="16" rx="3"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/><path d="M9 14h6"/><path d="M12 1v3"/></svg>`,
+            bell: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`,
+            alert: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
+            refresh: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>`,
+            trash: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`,
+            dropSmall: `<svg viewBox="0 0 16 16" fill="currentColor" class="w-2.5 h-2.5 inline-block"><path d="M8 2 C8 2 3.5 7.5 3.5 11 A 4.5 4.5 0 0 0 12.5 11 C12.5 7.5 8 2 8 2 Z"/></svg>`,
+        };
 
-        if (urlDistId && !isNaN(parseInt(urlDistId))) {
-            currentDistrictId = parseInt(urlDistId);
-        }
+        // Volumetric 3D Weather Illustrations (Glow & High-Detail Shading)
+        const WeatherIcons = {
+            clearDay: (cls) => `
+                <svg viewBox="0 0 64 64" fill="none" class="${cls}">
+                    <circle cx="32" cy="32" r="28" fill="url(#gradSunCorona)"/>
+                    <g stroke="#F59E0B" stroke-width="3" stroke-linecap="round" opacity="0.85">
+                        <line x1="32" y1="8" x2="32" y2="3"/>
+                        <line x1="32" y1="61" x2="32" y2="56"/>
+                        <line x1="8" y1="32" x2="3" y2="32"/>
+                        <line x1="61" y1="32" x2="56" y2="32"/>
+                        <line x1="15" y1="15" x2="11" y2="11"/>
+                        <line x1="53" y1="53" x2="49" y2="49"/>
+                        <line x1="15" y1="49" x2="11" y2="53"/>
+                        <line x1="53" y1="11" x2="49" y2="15"/>
+                    </g>
+                    <circle cx="32" cy="32" r="18" fill="url(#gradSun)" filter="drop-shadow(0 4px 10px rgba(245,158,11,0.5))"/>
+                    <path d="M23 21 A 12 12 0 0 1 38 20" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" opacity="0.65"/>
+                </svg>`,
 
-        if (urlLang && ['uz', 'ru', 'en'].includes(urlLang)) {
-            currentLang = urlLang;
-        } else {
-            const userTgLang = tg?.initDataUnsafe?.user?.language_code;
-            if (userTgLang) {
-                if (userTgLang.startsWith('ru')) currentLang = 'ru';
-                else if (userTgLang.startsWith('en')) currentLang = 'en';
-                else currentLang = 'uz';
+            clearNight: (cls) => `
+                <svg viewBox="0 0 64 64" fill="none" class="${cls}">
+                    <circle cx="32" cy="32" r="26" fill="url(#gradMoonGlow)"/>
+                    <path d="M16 16 L17.5 20 L21.5 21.5 L17.5 23 L16 27 L14.5 23 L10.5 21.5 L14.5 20 Z" fill="#FDE047" opacity="0.85"/>
+                    <circle cx="48" cy="18" r="1.5" fill="#FEF08A" opacity="0.9"/>
+                    <circle cx="18" cy="46" r="1.5" fill="#FEF08A" opacity="0.7"/>
+                    <path d="M38 12 C24 13 14 24 14 38 C14 49 22 57 33 58 C25 53 23 41 27 30 C30 22 36 16 45 14 C42.5 12.8 40.3 12.2 38 12 Z" 
+                          fill="url(#gradMoon)" filter="drop-shadow(0 4px 12px rgba(253, 224, 71, 0.45))"/>
+                    <circle cx="25" cy="36" r="2" fill="#D97706" opacity="0.25"/>
+                    <circle cx="28" cy="45" r="3" fill="#D97706" opacity="0.2"/>
+                    <circle cx="32" cy="26" r="1.8" fill="#D97706" opacity="0.2"/>
+                </svg>`,
+
+            partlyCloudyDay: (cls) => `
+                <svg viewBox="0 0 64 64" fill="none" class="${cls}">
+                    <circle cx="42" cy="24" r="13" fill="url(#gradSun)" filter="drop-shadow(0 2px 8px rgba(245,158,11,0.5))"/>
+                    <g stroke="#F59E0B" stroke-width="2.2" stroke-linecap="round" opacity="0.85">
+                        <line x1="42" y1="7" x2="42" y2="4"/>
+                        <line x1="57" y1="17" x2="60" y2="15"/>
+                        <line x1="59" y1="30" x2="62" y2="31"/>
+                        <line x1="54" y1="9" x2="56" y2="7"/>
+                    </g>
+                    <path d="M22 50 C15 50 10 45 10 39 C10 33.5 14 29 19.5 28.5 C21.5 21 28 16 35.5 16 C43.5 16 50 21.5 51.5 29 C56 30 59 34 59 39 C59 45 54 50 48 50 Z" 
+                          fill="url(#gradCloudFront)" filter="drop-shadow(0 6px 14px rgba(15,23,42,0.28))"/>
+                    <path d="M28 22 C32 19 39 19 43 23" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" opacity="0.8"/>
+                    <path d="M14 36 C14 32 17 30 20 30" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" opacity="0.6"/>
+                </svg>`,
+
+            partlyCloudyNight: (cls) => `
+                <svg viewBox="0 0 64 64" fill="none" class="${cls}">
+                    <path d="M43 14 C35 15 29 21 29 29 C29 34 31 38 35 41 C31 38 30 31 33 24 C35 19 39 15 45 14 Z" 
+                          fill="url(#gradMoon)" filter="drop-shadow(0 2px 8px rgba(253,224,71,0.4))"/>
+                    <circle cx="50" cy="18" r="1.5" fill="#FEF08A" opacity="0.85"/>
+                    <path d="M22 50 C15 50 10 45 10 39 C10 33.5 14 29 19.5 28.5 C21.5 21 28 16 35.5 16 C43.5 16 50 21.5 51.5 29 C56 30 59 34 59 39 C59 45 54 50 48 50 Z" 
+                          fill="url(#gradCloudFront)" filter="drop-shadow(0 6px 14px rgba(15,23,42,0.35))"/>
+                    <path d="M28 22 C32 19 39 19 43 23" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+                </svg>`,
+
+            cloudy: (cls) => `
+                <svg viewBox="0 0 64 64" fill="none" class="${cls}">
+                    <path d="M30 40 C25 40 21 36 21 32 C21 27.5 24 24 28.5 23.5 C30 18 35 14 41 14 C47.5 14 53 18.5 54 24.5 C58 25.5 60 28.5 60 32.5 C60 37 56 40 51 40 Z" 
+                          fill="url(#gradCloudBack)" opacity="0.9"/>
+                    <path d="M18 52 C12 52 8 47.5 8 42 C8 37 12 33 16.5 32.5 C18.5 25.5 24.5 21 31.5 21 C39 21 45 26 46.5 32.5 C50.5 33.5 53 37 53 41.5 C53 47 48.5 52 43 52 Z" 
+                          fill="url(#gradCloudFront)" filter="drop-shadow(0 6px 14px rgba(15,23,42,0.3))"/>
+                    <path d="M25 26 C28 24 34 24 38 27" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" opacity="0.75"/>
+                </svg>`,
+
+            rainLight: (cls) => `
+                <svg viewBox="0 0 64 64" fill="none" class="${cls}">
+                    <path d="M20 42 C14 42 10 38 10 33 C10 28.5 13.5 25 18 24.5 C20 18 26 14 32.5 14 C39.5 14 45 18.5 46.5 24.5 C50.5 25.5 53 28.5 53 33 C53 38 49 42 43.5 42 Z" 
+                          fill="url(#gradCloudFront)" filter="drop-shadow(0 4px 10px rgba(15,23,42,0.25))"/>
+                    <path d="M26 19 C29 17 35 17 38 20" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" opacity="0.75"/>
+                    <path d="M20 47 C20 45 22 43 22 43 C22 43 24 45 24 47 C24 48.5 23 50 22 50 C21 50 20 48.5 20 47 Z" fill="url(#gradRainDrop)"/>
+                    <path d="M31 50 C31 48 33 46 33 46 C33 46 35 48 35 50 C35 51.5 34 53 33 53 C32 53 31 51.5 31 50 Z" fill="url(#gradRainDrop)"/>
+                    <path d="M42 46 C42 44 44 42 44 42 C44 42 46 44 46 46 C46 47.5 45 49 44 49 C43 49 42 47.5 42 46 Z" fill="url(#gradRainDrop)"/>
+                </svg>`,
+
+            rainHeavy: (cls) => `
+                <svg viewBox="0 0 64 64" fill="none" class="${cls}">
+                    <path d="M20 38 C14 38 10 34 10 29 C10 24.5 13.5 21 18 20.5 C20 14 26 10 32.5 10 C39.5 10 45 14.5 46.5 20.5 C50.5 21.5 53 24.5 53 29 C53 34 49 38 43.5 38 Z" 
+                          fill="url(#gradCloudDark)" filter="drop-shadow(0 5px 12px rgba(15,23,42,0.4))"/>
+                    <path d="M26 15 C29 13 35 13 38 16" stroke="#CBD5E1" stroke-width="1.8" stroke-linecap="round" opacity="0.6"/>
+                    <g stroke="url(#gradRainDrop)" stroke-width="2.5" stroke-linecap="round">
+                        <line x1="18" y1="44" x2="14" y2="54"/>
+                        <line x1="26" y1="44" x2="22" y2="56"/>
+                        <line x1="34" y1="44" x2="30" y2="56"/>
+                        <line x1="42" y1="44" x2="38" y2="56"/>
+                        <line x1="49" y1="44" x2="46" y2="52"/>
+                    </g>
+                </svg>`,
+
+            thunderstorm: (cls) => `
+                <svg viewBox="0 0 64 64" fill="none" class="${cls}">
+                    <path d="M20 36 C14 36 10 32 10 27 C10 22.5 13.5 19 18 18.5 C20 12 26 8 32.5 8 C39.5 8 45 12.5 46.5 18.5 C50.5 19.5 53 22.5 53 27 C53 32 49 36 43.5 36 Z" 
+                          fill="url(#gradCloudDark)" filter="drop-shadow(0 6px 14px rgba(15,23,42,0.5))"/>
+                    <path d="M26 13 C29 11 35 11 38 14" stroke="#94A3B8" stroke-width="1.8" stroke-linecap="round" opacity="0.6"/>
+                    <polygon points="34,25 23,39 30,39 26,56 41,36 33,36 38,25" 
+                             fill="url(#gradLightning)" filter="drop-shadow(0 0 6px rgba(250,204,21,0.85))"/>
+                    <line x1="15" y1="44" x2="12" y2="52" stroke="#38BDF8" stroke-width="2" stroke-linecap="round"/>
+                    <line x1="48" y1="43" x2="45" y2="51" stroke="#38BDF8" stroke-width="2" stroke-linecap="round"/>
+                </svg>`,
+
+            snow: (cls) => `
+                <svg viewBox="0 0 64 64" fill="none" class="${cls}">
+                    <path d="M20 38 C14 38 10 34 10 29 C10 24.5 13.5 21 18 20.5 C20 14 26 10 32.5 10 C39.5 10 45 14.5 46.5 20.5 C50.5 21.5 53 24.5 53 29 C53 34 49 38 43.5 38 Z" 
+                          fill="url(#gradCloudFront)" filter="drop-shadow(0 4px 12px rgba(15,23,42,0.25))"/>
+                    <path d="M26 15 C29 13 35 13 38 16" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" opacity="0.8"/>
+                    <g stroke="#BAE6FD" stroke-width="2" stroke-linecap="round">
+                        <g transform="translate(32, 48)">
+                            <line x1="0" y1="-5" x2="0" y2="5"/>
+                            <line x1="-5" y1="0" x2="5" y2="0"/>
+                            <line x1="-3.5" y1="-3.5" x2="3.5" y2="3.5"/>
+                            <line x1="-3.5" y1="3.5" x2="3.5" y2="-3.5"/>
+                            <circle cx="0" cy="0" r="1" fill="#FFFFFF"/>
+                        </g>
+                        <g transform="translate(20, 46)">
+                            <line x1="0" y1="-3.5" x2="0" y2="3.5"/>
+                            <line x1="-3.5" y1="0" x2="3.5" y2="0"/>
+                            <line x1="-2.5" y1="-2.5" x2="2.5" y2="2.5"/>
+                            <line x1="-2.5" y1="2.5" x2="2.5" y2="-2.5"/>
+                        </g>
+                        <g transform="translate(44, 46)">
+                            <line x1="0" y1="-3.5" x2="0" y2="3.5"/>
+                            <line x1="-3.5" y1="0" x2="3.5" y2="0"/>
+                            <line x1="-2.5" y1="-2.5" x2="2.5" y2="2.5"/>
+                            <line x1="-2.5" y1="2.5" x2="2.5" y2="-2.5"/>
+                        </g>
+                    </g>
+                </svg>`,
+
+            fog: (cls) => `
+                <svg viewBox="0 0 64 64" fill="none" class="${cls}">
+                    <path d="M12 20 C18 16 26 24 34 20 C42 16 50 22 54 20" stroke="url(#gradFog1)" stroke-width="4" stroke-linecap="round"/>
+                    <path d="M8 29 C16 25 24 33 32 29 C40 25 48 31 56 29" stroke="url(#gradFog2)" stroke-width="4.5" stroke-linecap="round"/>
+                    <path d="M14 38 C20 34 28 42 36 38 C44 34 52 40 54 38" stroke="url(#gradFog1)" stroke-width="4" stroke-linecap="round"/>
+                    <path d="M10 47 C17 43 25 51 33 47 C41 43 49 49 55 47" stroke="url(#gradFog2)" stroke-width="4" stroke-linecap="round"/>
+                </svg>`,
+
+            getAqiCenterLeaf: (color) => `
+                <svg viewBox="0 0 24 24" fill="none" class="w-full h-full">
+                    <path d="M4 20 C6 14 11 9 19 5 C19 13 14 18 8 20 Z" fill="${color}" fill-opacity="0.9" stroke="#FFFFFF" stroke-width="1.3"/>
+                    <path d="M7 17 C10 13 13 10 17 7" stroke="#FFFFFF" stroke-width="1.3" stroke-linecap="round" opacity="0.85"/>
+                </svg>`,
+
+            get: function(code, isNight = false, cls = "w-full h-full") {
+                const c = Number(code) || 0;
+                if (c === 0) return isNight ? this.clearNight(cls) : this.clearDay(cls);
+                if (c === 1 || c === 2) return isNight ? this.partlyCloudyNight(cls) : this.partlyCloudyDay(cls);
+                if (c === 3) return this.cloudy(cls);
+                if (c === 45 || c === 48) return this.fog(cls);
+                if ([51, 53, 55, 61, 80].includes(c)) return this.rainLight(cls);
+                if ([63, 65, 81, 82].includes(c)) return this.rainHeavy(cls);
+                if ([71, 73, 75, 77, 85, 86].includes(c)) return this.snow(cls);
+                if ([95, 96, 99].includes(c)) return this.thunderstorm(cls);
+                return isNight ? this.partlyCloudyNight(cls) : this.partlyCloudyDay(cls);
             }
-        }
+        };
 
-        // Full UI Translation Dictionary
+        // Full UI Translation Dictionary (Clean labels with custom SVGs)
         const I18N = {
             uz: {
                 aqiTitle: "Havo Sifati (AQI)",
@@ -901,9 +1196,9 @@ def _build_miniapp_html() -> str:
                 analyzingAir: "Havo ma'lumotlari tahlil qilinmoqda...",
                 settingsTitle: "Sozlamalar va Bildirishnomalar",
                 secAlerts: "Bildirishnomalar",
-                lblAlert: "🚨 Xavfli havo xabarlari",
+                lblAlert: "Xavfli havo xabarlari",
                 lblAlertDesc: "AQI zararli darajaga yetganda avtomatik ogohlantirish",
-                lblDigest: "☀️ Ertalabki xabar",
+                lblDigest: "Ertalabki xabar",
                 lblDigestDesc: "Har tong kungi ob-havo va havo sifati ma'lumoti",
                 secSchedule: "Vaqt va mintaqa",
                 lblDigestTime: "Xabar yuborish vaqti",
@@ -911,8 +1206,8 @@ def _build_miniapp_html() -> str:
                 secHome: "Asosiy uy hududi",
                 lblHomeDesc: "Boshqa shahar yoki viloyatga borganingizda ham ertalabki xabarlar va ogohlantirishlar aynan uy hududingiz bo'yicha yuboriladi.",
                 lblYourHome: "Uy hududingiz:",
-                btnSetHome: "📍 Joriy hududni uy qilish",
-                btnClearHome: "🗑 O'chirish",
+                btnSetHome: "Joriy hududni uy qilish",
+                btnClearHome: "O'chirish",
                 savedToast: "✓ Sozlamalar saqlandi",
             },
             ru: {
@@ -957,9 +1252,9 @@ def _build_miniapp_html() -> str:
                 analyzingAir: "Анализ качества воздуха...",
                 settingsTitle: "Настройки и уведомления",
                 secAlerts: "Уведомления",
-                lblAlert: "🚨 Опасный воздух",
+                lblAlert: "Опасный воздух",
                 lblAlertDesc: "Автоматическое оповещение при опасном AQI",
-                lblDigest: "☀️ Утренний дайджест",
+                lblDigest: "Утренний дайджест",
                 lblDigestDesc: "Ежедневная утренняя сводка погоды и воздуха",
                 secSchedule: "Время и часовой пояс",
                 lblDigestTime: "Время отправки",
@@ -967,8 +1262,8 @@ def _build_miniapp_html() -> str:
                 secHome: "Домашний регион",
                 lblHomeDesc: "Даже во время поездок уведомления и сводки будут приходить по вашему домашнему району.",
                 lblYourHome: "Ваш дом:",
-                btnSetHome: "📍 Сделать текущий домашним",
-                btnClearHome: "🗑 Удалить",
+                btnSetHome: "Сделать текущий домашним",
+                btnClearHome: "Удалить",
                 savedToast: "✓ Настройки сохранены",
             },
             en: {
@@ -1013,9 +1308,9 @@ def _build_miniapp_html() -> str:
                 analyzingAir: "Analyzing air quality...",
                 settingsTitle: "Settings & Notifications",
                 secAlerts: "Notifications",
-                lblAlert: "🚨 Hazardous Air Alerts",
+                lblAlert: "Hazardous Air Alerts",
                 lblAlertDesc: "Automatic alert when AQI reaches unhealthy levels",
-                lblDigest: "☀️ Daily Morning Digest",
+                lblDigest: "Daily Morning Digest",
                 lblDigestDesc: "Daily morning forecast and air quality summary",
                 secSchedule: "Schedule & Timezone",
                 lblDigestTime: "Digest Delivery Time",
@@ -1023,8 +1318,8 @@ def _build_miniapp_html() -> str:
                 secHome: "Home District",
                 lblHomeDesc: "Morning digests and hazardous air alerts are always delivered for your home district, even when traveling.",
                 lblYourHome: "Home district:",
-                btnSetHome: "📍 Set current as Home",
-                btnClearHome: "🗑 Clear",
+                btnSetHome: "Set current as Home",
+                btnClearHome: "Clear",
                 savedToast: "✓ Settings saved",
             }
         };
@@ -1123,9 +1418,9 @@ def _build_miniapp_html() -> str:
             if (lblHomeDescEl) lblHomeDescEl.textContent = t.lblHomeDesc;
             const lblCurHomeEl = document.getElementById('lblCurrentHomeLabel');
             if (lblCurHomeEl) lblCurHomeEl.textContent = t.lblYourHome;
-            const btnSetHomeEl = document.getElementById('btnSetCurrentAsHome');
+            const btnSetHomeEl = document.getElementById('btnSetCurrentAsHomeText');
             if (btnSetHomeEl) btnSetHomeEl.textContent = t.btnSetHome;
-            const btnClearHomeEl = document.getElementById('btnClearHome');
+            const btnClearHomeEl = document.getElementById('btnClearHomeText');
             if (btnClearHomeEl) btnClearHomeEl.textContent = t.btnClearHome;
             const sToast = document.getElementById('settingsSaveToast');
             if (sToast) sToast.textContent = t.savedToast;
@@ -1378,19 +1673,22 @@ def _build_miniapp_html() -> str:
             // 1. District
             document.getElementById('currentDistrictName').textContent = district.name;
 
-            // 2. Weather Hero
-            document.getElementById('weatherEmojiHero').textContent = weather.emoji || '☀️';
+            // 2. Weather Hero (3D Volumetric Icon)
+            const nowH = new Date().getHours();
+            const isNight = (weather.is_day !== undefined) ? !weather.is_day : (nowH < 6 || nowH >= 20);
+            const heroIconEl = document.getElementById('weatherIconHero');
+            if (heroIconEl) {
+                heroIconEl.innerHTML = WeatherIcons.get(weather.weather_code, isNight, 'w-24 h-24');
+            }
             document.getElementById('weatherTemp').innerHTML = `<span>${Math.round(weather.temp)}</span><span class="text-4xl font-normal mt-1 text-white/80">°</span>`;
-            document.getElementById('weatherCondition').textContent = weather.condition;
+            document.getElementById('weatherCondition').textContent = weather.description || weather.condition;
             document.getElementById('tempRange').textContent = `${t.max}: ${Math.round(weather.temp_max)}° • ${t.min}: ${Math.round(weather.temp_min)}°`;
             document.getElementById('feelsLike').textContent = `${t.feelsLike}: ${Math.round(weather.feels_like)}°`;
 
             // Weather theme
-            const nowH = new Date().getHours();
-            const isNight = nowH < 6 || nowH >= 20;
             setWeatherTheme(weather.weather_code, isNight);
 
-            // 3. AQI Card
+            // 3. AQI Card & Center Gauge Icon
             document.getElementById('aqiNumber').textContent = air.aqi;
             const badge = document.getElementById('aqiLevelBadge');
             badge.textContent = air.level_name;
@@ -1400,7 +1698,11 @@ def _build_miniapp_html() -> str:
 
             document.getElementById('aqiAdviceText').textContent = air.advice;
             document.getElementById('aqiUpdatedTime').textContent = air.updated_at || '--:--';
-            document.getElementById('aqiGaugeCenterEmoji').textContent = air.emoji;
+            
+            const aqiCenterIcon = document.getElementById('aqiGaugeCenterIcon');
+            if (aqiCenterIcon) {
+                aqiCenterIcon.innerHTML = WeatherIcons.getAqiCenterLeaf(air.color);
+            }
 
             // AQI circular stroke (max 300 AQI for full circle, 251.2 dasharray)
             const circle = document.getElementById('aqiProgressCircle');
@@ -1413,7 +1715,7 @@ def _build_miniapp_html() -> str:
             document.getElementById('valPm25').innerHTML = `${air.pm2_5 !== null ? air.pm2_5 : '—'} <span class="text-[10px] text-white/60 font-normal">µg/m³</span>`;
             document.getElementById('valPm10').innerHTML = `${air.pm10 !== null ? air.pm10 : '—'} <span class="text-[10px] text-white/60 font-normal">µg/m³</span>`;
 
-            // 4. Hourly Forecast (Today vs Tomorrow clear differentiation)
+            // 4. Hourly Forecast (3D Icons & Today vs Tomorrow clear differentiation)
             const hourlyEl = document.getElementById('hourlyContainer');
             if (hourly && hourly.length > 0) {
                 let seenTomorrow = false;
@@ -1426,6 +1728,7 @@ def _build_miniapp_html() -> str:
                     }
                     prevHour = hourNum;
                     const isTomorrow = item.is_tomorrow || seenTomorrow;
+                    const isItemNight = (hourNum < 6 || hourNum >= 20);
 
                     let dayBadge = t.today;
                     let badgeClass = 'text-white/45 font-semibold';
@@ -1441,21 +1744,25 @@ def _build_miniapp_html() -> str:
                         cardBg = 'bg-white/5 border border-amber-300/30 shadow-sm shadow-amber-500/5';
                     }
 
+                    const hourlyIconSvg = WeatherIcons.get(item.weather_code ?? weather.weather_code, isItemNight, 'w-8 h-8');
+
                     return `
                     <div class="flex-shrink-0 w-[68px] py-2.5 px-1.5 rounded-2xl flex flex-col items-center justify-between text-center transition ${cardBg}">
                         <div class="flex flex-col items-center w-full leading-tight">
                             <span class="text-[9px] ${badgeClass} uppercase tracking-tight truncate w-full">${dayBadge}</span>
                             <span class="text-[11px] font-bold ${item.is_now ? 'text-white' : 'text-white/85'} mt-0.5">${item.is_now ? t.now : item.time}</span>
                         </div>
-                        <span class="text-2xl my-1.5 filter drop-shadow">${item.emoji}</span>
+                        <div class="w-8 h-8 my-1 flex items-center justify-center filter drop-shadow">
+                            ${hourlyIconSvg}
+                        </div>
                         <span class="text-sm font-bold font-sans">${Math.round(item.temp)}°</span>
-                        ${item.pop > 10 ? `<span class="text-[9px] font-bold text-sky-300 mt-0.5">💧${item.pop}%</span>` : ''}
+                        ${item.pop > 10 ? `<span class="text-[9px] font-bold text-sky-300 mt-0.5 flex items-center gap-0.5 justify-center">${AppIcons.dropSmall}<span>${item.pop}%</span></span>` : ''}
                     </div>
                     `;
                 }).join('');
             }
 
-            // 5. Weekly Forecast (Dynamic for ANY temperature range including winter/subzero)
+            // 5. Weekly Forecast (3D Icons & Dynamic for ANY temperature range)
             const weeklyEl = document.getElementById('weeklyContainer');
             if (weekly && weekly.length > 0) {
                 const allMin = Math.min(...weekly.map(d => d.temp_min));
@@ -1483,11 +1790,14 @@ def _build_miniapp_html() -> str:
 
                     const isToday = idx === 0;
                     const dayLabel = isToday ? t.today : (idx === 1 ? t.tomorrow : day.day_name);
+                    const weeklyIconSvg = WeatherIcons.get(day.weather_code ?? 0, false, 'w-6 h-6');
 
                     return `
                     <div class="py-2.5 flex items-center justify-between text-xs font-medium">
                         <span class="w-16 font-semibold truncate ${isToday ? 'text-sky-300 font-bold' : 'text-white'}">${dayLabel}</span>
-                        <div class="w-8 text-center text-lg">${day.emoji}</div>
+                        <div class="w-8 h-8 flex items-center justify-center filter drop-shadow-sm flex-shrink-0">
+                            ${weeklyIconSvg}
+                        </div>
                         <span class="w-10 text-right font-mono text-white/70 font-bold">${Math.round(day.temp_min)}°</span>
                         <div class="flex-1 mx-3 h-1.5 bg-white/10 rounded-full relative overflow-visible">
                             <div class="absolute h-full rounded-full bg-gradient-to-r from-sky-400 via-amber-300 to-orange-400" style="left: ${leftPct}%; width: ${widthPct}%;">
@@ -1502,7 +1812,7 @@ def _build_miniapp_html() -> str:
 
             // 6. Bento Grid Cards
             document.getElementById('valWindSpeed').textContent = weather.wind_speed;
-            document.getElementById('valWindDir').textContent = weather.wind_dir;
+            document.getElementById('valWindDir').textContent = weather.wind_dir || weather.wind_direction;
             document.getElementById('valWindCompass').textContent = `${weather.wind_deg}°`;
 
             document.getElementById('valHumidity').textContent = weather.humidity;
@@ -1593,7 +1903,7 @@ def _build_miniapp_html() -> str:
                 html += `<div class="text-[10px] font-bold text-sky-400 uppercase tracking-wider px-1 pt-1 pb-0.5">${t.preConfiguredTitle}</div>`;
                 html += localMatches.map(d => `
                     <button onclick="selectDistrict(${d.id})" class="w-full text-left p-3 rounded-xl flex items-center justify-between transition ${d.id === currentDistrictId ? 'bg-sky-600/40 border border-sky-400/50 font-bold' : 'bg-white/5 hover:bg-white/10 text-white/80'}">
-                        <span class="flex items-center gap-2"><span>📍</span> <span>${d.name}</span></span>
+                        <span class="flex items-center gap-2"><span class="w-3.5 h-3.5 text-rose-400 flex items-center justify-center flex-shrink-0">${AppIcons.pin}</span> <span>${d.name}</span></span>
                         ${d.id === currentDistrictId ? '<span class="text-sky-300">✓</span>' : `<span class="text-white/30 text-xs">${t.select}</span>`}
                     </button>
                 `).join('');
@@ -1616,7 +1926,7 @@ def _build_miniapp_html() -> str:
                 html += `<div class="text-[10px] font-bold text-sky-400 uppercase tracking-wider px-1 pt-1 pb-0.5">${t.preConfiguredTitle}</div>`;
                 html += localMatches.map(d => `
                     <button onclick="selectDistrict(${d.id})" class="w-full text-left p-3 rounded-xl flex items-center justify-between transition ${d.id === currentDistrictId ? 'bg-sky-600/40 border border-sky-400/50 font-bold' : 'bg-white/5 hover:bg-white/10 text-white/80'}">
-                        <span class="flex items-center gap-2"><span>📍</span> <span>${d.name}</span></span>
+                        <span class="flex items-center gap-2"><span class="w-3.5 h-3.5 text-rose-400 flex items-center justify-center flex-shrink-0">${AppIcons.pin}</span> <span>${d.name}</span></span>
                         ${d.id === currentDistrictId ? '<span class="text-sky-300">✓</span>' : `<span class="text-white/30 text-xs">${t.select}</span>`}
                     </button>
                 `).join('');
@@ -1624,11 +1934,11 @@ def _build_miniapp_html() -> str:
 
             // 2. Global search results
             if (globalSearchResults.length > 0) {
-                html += `<div class="text-[10px] font-bold text-amber-300 uppercase tracking-wider px-1 pt-2 pb-0.5 flex items-center gap-1.5"><span>🌍</span> <span>${t.globalResultsTitle}</span></div>`;
+                html += `<div class="text-[10px] font-bold text-amber-300 uppercase tracking-wider px-1 pt-2 pb-0.5 flex items-center gap-1.5"><span class="w-3.5 h-3.5 text-sky-400 flex items-center justify-center flex-shrink-0">${AppIcons.globe}</span> <span>${t.globalResultsTitle}</span></div>`;
                 html += globalSearchResults.map((loc, idx) => `
                     <button onclick="selectGlobalLocation(${idx})" class="w-full text-left p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 hover:border-sky-400/30 transition flex items-center justify-between">
                         <div class="flex items-center gap-2.5 truncate pr-2">
-                            <span class="text-base flex-shrink-0">🌐</span>
+                            <span class="w-5 h-5 text-sky-400 flex items-center justify-center flex-shrink-0">${AppIcons.globe}</span>
                             <div class="truncate">
                                 <div class="text-xs font-bold text-white truncate">${loc.name}</div>
                                 <div class="text-[10px] text-white/50 truncate">${loc.country || ''} ${loc.admin_area ? '• ' + loc.admin_area : ''}</div>

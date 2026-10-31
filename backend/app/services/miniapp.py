@@ -115,6 +115,7 @@ async def fetch_hourly_forecast(
                 result.append({
                     "time": dt.strftime("%H:%M"),
                     "temp": round(float(temps[i]), 1),
+                    "weather_code": wmo,
                     "emoji": emoji,
                     "condition_key": cond_key,
                     "pop": int(pops[i]) if i < len(pops) and pops[i] is not None else 0,
@@ -144,6 +145,7 @@ async def fetch_hourly_forecast(
                     result.append({
                         "time": dt.strftime("%H:%M"),
                         "temp": round(float(it["main"]["temp"]), 1),
+                        "weather_code": wmo,
                         "emoji": emoji,
                         "condition_key": cond_key,
                         "pop": round(float(it.get("pop", 0)) * 100),
@@ -264,6 +266,7 @@ async def get_miniapp_full_data(
             weekly_formatted.append({
                 "date": day.date_str,
                 "day_name": day_title,
+                "weather_code": day.weather_code,
                 "temp_min": day.temp_min,
                 "temp_max": day.temp_max,
                 "emoji": day.emoji,

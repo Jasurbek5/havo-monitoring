@@ -17,6 +17,10 @@ async def test_miniapp_html_endpoint():
         assert "aqiProgressCircle" in res.text
         assert "settingsBtn" in res.text
         assert "settingsModal" in res.text
+        assert "weatherIconHero" in res.text
+        assert "WeatherIcons" in res.text
+        assert "AppIcons" in res.text
+        assert "aqiGaugeCenterIcon" in res.text
 
 
 @pytest.mark.asyncio
@@ -47,6 +51,9 @@ async def test_miniapp_data_endpoint(seeded, session_factory):
             assert "weekly" in data
             if data["hourly"]:
                 assert "is_tomorrow" in data["hourly"][0]
+                assert "weather_code" in data["hourly"][0]
+            if data["weekly"]:
+                assert "weather_code" in data["weekly"][0]
 
 
 @pytest.mark.asyncio
