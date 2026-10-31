@@ -275,6 +275,33 @@ async def get_miniapp_full_data(
                 "pop": day.precipitation_prob or 0,
             })
 
+    # Bugungi kunning haqiqiy to'liq 24 soatlik min va max harorati:
+    # Open-Meteo'ning haftalik prognozi, soatlik prognoz va hozirgi o'lchangan harorat tahlili
+    today_min_candidates: list[float] = []
+    today_max_candidates: list[float] = []
+
+    if weather:
+        today_min_candidates.append(weather.temp)
+        today_max_candidates.append(weather.temp)
+
+    if weekly and weekly.days:
+        today_min_candidates.append(weekly.days[0].temp_min)
+        today_max_candidates.append(weekly.days[0].temp_max)
+
+    if hourly:
+        today_hourly_temps = [h["temp"] for h in hourly if not h.get("is_tomorrow")]
+        if today_hourly_temps:
+            today_min_candidates.extend(today_hourly_temps)
+            today_max_candidates.extend(today_hourly_temps)
+
+    today_min = round(min(today_min_candidates), 1) if today_min_candidates else (weather.temp_min if weather else 15.0)
+    today_max = round(max(today_max_candidates), 1) if today_max_candidates else (weather.temp_max if weather else 25.0)
+
+    # Agar haftalik prognozning birinchi kuni (Bugun) bo'lsa, uning min/max qiymatini ham haqiqiy min/max ga sinxronlashtiramiz
+    if weekly_formatted and len(weekly_formatted) > 0:
+        weekly_formatted[0]["temp_min"] = today_min
+        weekly_formatted[0]["temp_max"] = today_max
+
     # UV indeksini baholash (soat va faslga qarab, agar API bermasa)
     uv_val = 3
     uv_cat = "O'rtacha" if lang == "uz" else ("Умеренный" if lang == "ru" else "Moderate")
@@ -332,8 +359,8 @@ async def get_miniapp_full_data(
         "weather": {
             "temp": weather.temp if weather else 20.0,
             "feels_like": weather.feels_like if weather else 20.0,
-            "temp_min": weather.temp_min if weather else 15.0,
-            "temp_max": weather.temp_max if weather else 25.0,
+            "temp_min": today_min,
+            "temp_max": today_max,
             "condition": cond_name,
             "emoji": weather.emoji if weather else "☀️",
             "weather_code": weather.weather_code if weather else 0,

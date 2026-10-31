@@ -193,14 +193,19 @@ async def get_miniapp_data(
         if district_id is not None:
             target_district = await get_district(session, district_id)
 
-        if target_district is None and telegram_id is not None:
+        user: User | None = None
+        if telegram_id is not None:
             user = await session.scalar(select(User).where(User.telegram_id == telegram_id))
-            if user:
+            if target_district is None and user:
                 target_district = user.district or user.home_district
-                if not lang and user.language:
-                    lang = user.language
+            if user and not lang and user.language:
+                lang = user.language
 
-        # Agar hali ham topilmasa, Chilonzor (id 2) yoki birinchi tumanni tanlaymiz
+        has_user_selected = bool(
+            district_id is not None or (user and (user.district_id or user.home_district_id))
+        )
+
+        # Agar hali ham topilmasa, vaqtinchalik ko'rsatish uchun Toshkent/Chilonzor olamiz
         if target_district is None:
             target_district = await session.scalar(
                 select(District).where(District.slug == "chilonzor")
@@ -211,6 +216,11 @@ async def get_miniapp_data(
         if target_district is None:
             raise HTTPException(status_code=404, detail="Hududlar topilmadi")
 
+        # Agar foydalanuvchi ma'lum bir hududni so'ragan bo'lsa va u DB da hali saqlanmagan bo'lsa, DB ga saqlaymiz
+        if user and district_id is not None and user.district_id != target_district.id:
+            user.district_id = target_district.id
+            await session.commit()
+
         data = await get_miniapp_full_data(
             session=session,
             redis=redis,
@@ -219,6 +229,7 @@ async def get_miniapp_data(
             district=target_district,
             lang=lang,
         )
+        data["has_selected_location"] = has_user_selected
 
     await provider.aclose()
     return JSONResponse(data)
@@ -231,6 +242,7 @@ class UserSettingsUpdate(BaseModel):
     digest_time: str | None = None
     timezone: str | None = None
     home_district_id: int | None = None
+    district_id: int | None = None
     clear_home: bool = False
 
 
@@ -249,19 +261,26 @@ async def get_user_settings(
                 "daily_digest": False,
                 "digest_time": "07:00",
                 "timezone": "auto",
+                "district_id": None,
+                "district_name": "—",
                 "home_district_id": None,
                 "home_district_name": "—",
+                "has_selected_location": False,
             })
 
         home_name = user.home_district.name(lang).split(",")[0].strip() if user.home_district else "—"
+        dist_name = user.district.name(lang).split(",")[0].strip() if user.district else "—"
         return JSONResponse({
             "telegram_id": user.telegram_id,
             "alert_enabled": user.alert_enabled,
             "daily_digest": user.daily_digest,
             "digest_time": user.digest_time or "07:00",
             "timezone": getattr(user, "timezone", "auto") or "auto",
+            "district_id": user.district_id,
+            "district_name": dist_name,
             "home_district_id": user.home_district_id,
             "home_district_name": home_name,
+            "has_selected_location": bool(user.district_id or user.home_district_id),
         })
 
 
@@ -281,6 +300,7 @@ async def update_user_settings(
                 daily_digest=body.daily_digest if body.daily_digest is not None else False,
                 digest_time=body.digest_time or "07:00",
                 timezone=body.timezone or "auto",
+                district_id=body.district_id,
             )
             session.add(user)
         else:
@@ -292,6 +312,8 @@ async def update_user_settings(
                 user.digest_time = body.digest_time
             if body.timezone is not None:
                 user.timezone = body.timezone
+            if body.district_id is not None:
+                user.district_id = body.district_id
             if body.clear_home:
                 user.home_district_id = None
             elif body.home_district_id is not None:
@@ -300,6 +322,7 @@ async def update_user_settings(
         await session.commit()
         user = await session.scalar(select(User).where(User.telegram_id == body.telegram_id))
         home_name = user.home_district.name(lang).split(",")[0].strip() if (user and user.home_district) else "—"
+        dist_name = user.district.name(lang).split(",")[0].strip() if (user and user.district) else "—"
         return JSONResponse({
             "ok": True,
             "settings": {
@@ -308,8 +331,11 @@ async def update_user_settings(
                 "daily_digest": user.daily_digest if user else False,
                 "digest_time": user.digest_time if user else "07:00",
                 "timezone": getattr(user, "timezone", "auto") if user else "auto",
+                "district_id": user.district_id if user else None,
+                "district_name": dist_name,
                 "home_district_id": user.home_district_id if user else None,
                 "home_district_name": home_name,
+                "has_selected_location": bool(user and (user.district_id or user.home_district_id)),
             }
         })
 
@@ -708,17 +734,23 @@ def _build_miniapp_html() -> str:
                 <div class="text-[11px] text-white/60" id="lblPressureDesc">Normal atmosfera</div>
             </div>
 
-            <!-- App Info / Telegram Bot -->
+            <!-- EkoRadar Status Card -->
             <div class="glass-card p-4 flex flex-col justify-between h-36">
-                <div class="flex items-center gap-1.5 text-xs font-semibold text-white/70 uppercase">
-                    <span class="w-4 h-4 text-sky-300 flex items-center justify-center flex-shrink-0">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full"><rect x="5" y="4" width="14" height="16" rx="3"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/><path d="M9 14h6"/><path d="M12 1v3"/></svg>
+                <div class="flex items-center justify-between text-xs font-semibold text-white/70 uppercase">
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-4 h-4 text-emerald-400 flex items-center justify-center flex-shrink-0">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full"><circle cx="12" cy="12" r="9"/><path d="M12 3a14.5 14.5 0 0 1 0 18a14.5 14.5 0 0 1 0-18z"/></svg>
+                        </span>
+                        <span id="botTitle">EkoRadar</span>
+                    </div>
+                    <span class="inline-flex items-center gap-1 text-[10px] text-emerald-300 font-bold bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-400/30">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span id="lblLiveStatus">Jonli</span>
                     </span>
-                    <span id="botTitle">Havo Bot</span>
                 </div>
                 <div>
-                    <div class="text-sm font-bold" id="botSubtitle">Toshkent & Viloyatlar</div>
-                    <div class="text-[11px] text-white/70 mt-1" id="botDesc">Real vaqt monitoringi</div>
+                    <div class="text-sm font-bold" id="botSubtitle">Havo va Ob-havo</div>
+                    <div class="text-[11px] text-white/70 mt-1" id="botDesc">Avtomatlashtirilgan monitoring tizimi</div>
                 </div>
                 <button onclick="closeMiniApp()" id="btnClose" class="w-full py-1.5 rounded-xl bg-white/20 active:scale-95 transition text-xs font-bold text-center">
                     Yopish ✕
@@ -915,7 +947,7 @@ def _build_miniapp_html() -> str:
         }
 
         let currentLang = 'uz';
-        let currentDistrictId = 2; // Default Chilonzor
+        let currentDistrictId = localStorage.getItem('havo_current_district_id') || null;
         let allDistricts = { city: [], regions: [], other: [] };
         let currentTab = 'city';
 
@@ -1283,9 +1315,10 @@ def _build_miniapp_html() -> str:
                 humidityComfortGood: "Qulay darajada",
                 humidityComfortDry: "Quruq havo",
                 humidityComfortHumid: "Yuqori namlik",
-                botTitle: "Havo Bot",
-                botSubtitle: "Toshkent & Viloyatlar",
-                botDesc: "Real vaqt monitoringi",
+                botTitle: "EkoRadar",
+                botSubtitle: "Havo va Ob-havo",
+                botDesc: "Avtomatlashtirilgan monitoring tizimi",
+                lblLiveStatus: "Jonli",
                 close: "Yopish ✕",
                 now: "Hozir",
                 today: "Bugun",
@@ -1344,9 +1377,10 @@ def _build_miniapp_html() -> str:
                 humidityComfortGood: "Комфортная влажность",
                 humidityComfortDry: "Сухой воздух",
                 humidityComfortHumid: "Высокая влажность",
-                botTitle: "Бот мониторинга",
-                botSubtitle: "Ташкент и регионы",
-                botDesc: "Мониторинг в реальном времени",
+                botTitle: "EkoRadar",
+                botSubtitle: "Воздух и Погода",
+                botDesc: "Автоматизированный мониторинг",
+                lblLiveStatus: "В сети",
                 close: "Закрыть ✕",
                 now: "Сейчас",
                 today: "Сегодня",
@@ -1405,9 +1439,10 @@ def _build_miniapp_html() -> str:
                 humidityComfortGood: "Comfortable",
                 humidityComfortDry: "Dry air",
                 humidityComfortHumid: "High humidity",
-                botTitle: "Air Quality Bot",
-                botSubtitle: "Tashkent & Regions",
-                botDesc: "Real-time Monitoring",
+                botTitle: "EkoRadar",
+                botSubtitle: "Air & Weather",
+                botDesc: "Automated monitoring system",
+                lblLiveStatus: "Live",
                 close: "Close ✕",
                 now: "Now",
                 today: "Today",
@@ -1475,6 +1510,7 @@ def _build_miniapp_html() -> str:
             setText('botTitle', t.botTitle);
             setText('botSubtitle', t.botSubtitle);
             setText('botDesc', t.botDesc);
+            setText('lblLiveStatus', t.lblLiveStatus);
             setText('btnClose', t.close);
             setText('badgePm25', t.epaBadge);
             setText('badgePm10', t.epaBadge);
@@ -1563,6 +1599,13 @@ def _build_miniapp_html() -> str:
                 const res = await fetch(`/api/miniapp/settings?telegram_id=${tgId}&lang=${currentLang}`);
                 if (res.ok) {
                     userSettings = await res.json();
+                    if (!currentDistrictId) {
+                        const targetId = userSettings.district_id || userSettings.home_district_id;
+                        if (targetId) {
+                            currentDistrictId = targetId;
+                            try { localStorage.setItem('havo_current_district_id', targetId); } catch(e) {}
+                        }
+                    }
                     renderSettingsUI();
                     updateCurrentDistrictIcon();
                 }
@@ -1755,12 +1798,27 @@ def _build_miniapp_html() -> str:
         async function loadData() {
             const tgUser = tg?.initDataUnsafe?.user;
             const tgId = tgUser?.id || '';
+            const qDist = currentDistrictId ? `&district_id=${currentDistrictId}` : '';
 
             try {
-                const res = await fetch(`/api/miniapp/data?district_id=${currentDistrictId}&lang=${currentLang}&telegram_id=${tgId}`);
+                const res = await fetch(`/api/miniapp/data?lang=${currentLang}&telegram_id=${tgId}${qDist}`);
                 if (!res.ok) throw new Error("HTTP error " + res.status);
                 const data = await res.json();
+                if (!currentDistrictId && data.district?.id) {
+                    currentDistrictId = data.district.id;
+                }
                 renderUI(data);
+
+                // Agar foydalanuvchi biror marta ham hudud tanlamagan bo'lsa:
+                const localChosen = localStorage.getItem('havo_current_district_id');
+                const hasSelected = localChosen || data.has_selected_location || userSettings.home_district_id;
+                if (!hasSelected) {
+                    setTimeout(() => {
+                        openDistrictModal();
+                        const searchInput = document.getElementById('districtSearchInput');
+                        if (searchInput) searchInput.focus();
+                    }, 400);
+                }
             } catch (err) {
                 console.error("MiniApp yuklashda xatolik:", err);
             }
@@ -1773,7 +1831,9 @@ def _build_miniapp_html() -> str:
             // 1. District (faqat birinchi qismini olamiz)
             const rawDistName = district.short_name || district.name || '';
             document.getElementById('currentDistrictName').textContent = rawDistName.split(',')[0].trim();
-            saveLocationToList({ id: district.id, name: rawDistName });
+            if (data.has_selected_location || localStorage.getItem('havo_current_district_id')) {
+                saveLocationToList({ id: district.id, name: rawDistName });
+            }
             updateCurrentDistrictIcon();
 
             // 2. Weather Hero (3D Volumetric Icon)
@@ -1977,7 +2037,7 @@ def _build_miniapp_html() -> str:
                     if (Array.isArray(parsed) && parsed.length > 0) return parsed;
                 }
             } catch(e) {}
-            return [{ id: 2, name: 'Chilonzor' }];
+            return [];
         }
 
         function saveLocationToList(item) {
@@ -2202,8 +2262,10 @@ def _build_miniapp_html() -> str:
                     const data = await res.json();
                     if (data.district) {
                         currentDistrictId = data.district.id;
+                        try { localStorage.setItem('havo_current_district_id', data.district.id); } catch(e) {}
                         userSettings.home_district_id = data.district.id;
                         userSettings.home_district_name = data.district.short_name || data.district.name;
+                        userSettings.district_id = data.district.id;
                         saveLocationToList({ id: data.district.id, name: data.district.short_name });
                         updateCurrentDistrictIcon();
                         closeDistrictModal();
@@ -2235,6 +2297,8 @@ def _build_miniapp_html() -> str:
                     const data = await res.json();
                     if (data.district) {
                         currentDistrictId = data.district.id;
+                        try { localStorage.setItem('havo_current_district_id', data.district.id); } catch(e) {}
+                        userSettings.district_id = data.district.id;
                         saveLocationToList({ id: data.district.id, name: data.district.short_name });
                         updateCurrentDistrictIcon();
                         closeDistrictModal();
@@ -2252,6 +2316,11 @@ def _build_miniapp_html() -> str:
         function selectDistrict(id) {
             haptic('medium');
             currentDistrictId = id;
+            try { localStorage.setItem('havo_current_district_id', id); } catch(e) {}
+            const tgUser = tg?.initDataUnsafe?.user;
+            if (tgUser?.id) {
+                saveSettings({ district_id: id });
+            }
             updateCurrentDistrictIcon();
             closeDistrictModal();
             loadData();
