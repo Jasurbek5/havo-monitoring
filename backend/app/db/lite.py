@@ -14,24 +14,25 @@ from app.models import Base
 async def init_lite_db(engine: AsyncEngine, factory: async_sessionmaker[AsyncSession]) -> None:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-        cols_result = await conn.execute(text("PRAGMA table_info(districts)"))
-        cols = {row[1] for row in cols_result.fetchall()}
-        if cols and "name_en" not in cols:
-            await conn.execute(text("ALTER TABLE districts ADD COLUMN name_en VARCHAR(100)"))
+        if engine.url.drivername.startswith("sqlite"):
+            cols_result = await conn.execute(text("PRAGMA table_info(districts)"))
+            cols = {row[1] for row in cols_result.fetchall()}
+            if cols and "name_en" not in cols:
+                await conn.execute(text("ALTER TABLE districts ADD COLUMN name_en VARCHAR(100)"))
 
-        user_cols_result = await conn.execute(text("PRAGMA table_info(users)"))
-        user_cols = {row[1] for row in user_cols_result.fetchall()}
-        if user_cols and "home_district_id" not in user_cols:
-            await conn.execute(
-                text("ALTER TABLE users ADD COLUMN home_district_id INTEGER REFERENCES districts(id)")
-            )
-        if user_cols and "digest_time" not in user_cols:
-            await conn.execute(
-                text("ALTER TABLE users ADD COLUMN digest_time VARCHAR(5) DEFAULT '07:00'")
-            )
-        if user_cols and "timezone" not in user_cols:
-            await conn.execute(
-                text("ALTER TABLE users ADD COLUMN timezone VARCHAR(32) DEFAULT 'auto'")
-            )
+            user_cols_result = await conn.execute(text("PRAGMA table_info(users)"))
+            user_cols = {row[1] for row in user_cols_result.fetchall()}
+            if user_cols and "home_district_id" not in user_cols:
+                await conn.execute(
+                    text("ALTER TABLE users ADD COLUMN home_district_id INTEGER REFERENCES districts(id)")
+                )
+            if user_cols and "digest_time" not in user_cols:
+                await conn.execute(
+                    text("ALTER TABLE users ADD COLUMN digest_time VARCHAR(5) DEFAULT '07:00'")
+                )
+            if user_cols and "timezone" not in user_cols:
+                await conn.execute(
+                    text("ALTER TABLE users ADD COLUMN timezone VARCHAR(32) DEFAULT 'auto'")
+                )
     async with factory() as session:
         await seed_districts(session)

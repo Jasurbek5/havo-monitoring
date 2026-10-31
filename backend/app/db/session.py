@@ -1,5 +1,6 @@
 """Async engine va sessiya fabrikalari."""
 
+import re
 from collections.abc import AsyncIterator
 
 from sqlalchemy import event
@@ -26,7 +27,23 @@ def _tune_sqlite(engine: AsyncEngine) -> None:
         cursor.close()
 
 
+def normalize_database_url(url: str) -> str:
+    """PostgreSQL URL'larini asyncpg formatiga moslashtirish (Neon, Supabase, Render)."""
+    if url.startswith("postgres://"):
+        url = "postgresql+asyncpg://" + url[len("postgres://"):]
+    elif url.startswith("postgresql://"):
+        url = "postgresql+asyncpg://" + url[len("postgresql://"):]
+
+    if "asyncpg" in url:
+        # asyncpg 'channel_binding' parametrini tanimaydi, 'sslmode' o'rniga 'ssl' ishlatadi
+        url = re.sub(r"[?&]channel_binding=[^&]+", "", url)
+        url = re.sub(r"([?&])sslmode=require", r"\1ssl=require", url)
+        url = url.replace("?&", "?").rstrip("?")
+    return url
+
+
 def make_engine(url: str, *, null_pool: bool = False) -> AsyncEngine:
+    url = normalize_database_url(url)
     kwargs: dict = {}
     is_sqlite = url.startswith("sqlite")
     if null_pool:
